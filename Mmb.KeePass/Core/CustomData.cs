@@ -7,7 +7,7 @@ namespace Mmb.KeePass;
 /// </summary>
 public class CustomData
 {
-    private readonly Dictionary<string, CustomDataItem> _data = new();
+    private readonly Dictionary<string, CustomDataItem> _data = [];
 
     /// <summary>All keys in insertion order.</summary>
     public IReadOnlyList<string> Keys => _data.Keys.ToList();
@@ -59,7 +59,9 @@ public class CustomData
     {
         _data.Clear();
         foreach (var (key, item) in other._data)
+        {
             _data[key] = item;
+        }
     }
 
     /// <summary>
@@ -71,8 +73,14 @@ public class CustomData
         get => GetValue(key);
         set
         {
-            if (value is null) Remove(key);
-            else _data[key] = new CustomDataItem(value);
+            if (value is null)
+            {
+                Remove(key);
+            }
+            else
+            {
+                _data[key] = new CustomDataItem(value);
+            }
         }
     }
 }

@@ -44,7 +44,11 @@ public class TriStateTests
 
     internal static TriState? ParseTriState(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
         return value.Trim().ToUpperInvariant() switch
         {
             "NULL" => TriState.Inherit,
