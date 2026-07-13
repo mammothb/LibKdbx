@@ -13,5 +13,5 @@ public enum TriState
     Enable,
 
     /// <summary>Force disabled (written as "False" in XML).</summary>
-    Disable
+    Disable,
 }

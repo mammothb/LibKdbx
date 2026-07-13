@@ -19,8 +19,7 @@ public class EntryAttachments
     public bool IsEmpty => _attachments.Count == 0;
 
     /// <summary>Gets the data for <paramref name="key"/>, or null if not found.</summary>
-    public byte[]? Get(string key) =>
-        _attachments.TryGetValue(key, out byte[]? data) ? data : null;
+    public byte[]? Get(string key) => _attachments.TryGetValue(key, out byte[]? data) ? data : null;
 
     /// <summary>True if the attachment exists.</summary>
     public bool Contains(string key) => _attachments.ContainsKey(key);
@@ -87,7 +86,8 @@ public class EntryAttachments
         && _attachments.Count == other._attachments.Count
         && _attachments.All(kv =>
             other._attachments.TryGetValue(kv.Key, out byte[]? otherData)
-            && otherData.AsSpan().SequenceEqual(kv.Value));
+            && otherData.AsSpan().SequenceEqual(kv.Value)
+        );
 
     public override int GetHashCode()
     {

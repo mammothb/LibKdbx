@@ -18,7 +18,13 @@ public partial class EntryAttributes
     public const string NotesKey = "Notes";
 
     public static readonly IReadOnlyList<string> DefaultAttributeKeys =
-        [TitleKey, UserNameKey, PasswordKey, URLKey, NotesKey];
+    [
+        TitleKey,
+        UserNameKey,
+        PasswordKey,
+        URLKey,
+        NotesKey,
+    ];
 
     // ── Additional URL prefix ───────────────────────────────────────────────
 
@@ -49,11 +55,31 @@ public partial class EntryAttributes
 
     // ── Default attribute properties ────────────────────────────────────────
 
-    public string Title { get => _attributes[TitleKey]; set => Set(TitleKey, value); }
-    public string UserName { get => _attributes[UserNameKey]; set => Set(UserNameKey, value); }
-    public string Password { get => _attributes[PasswordKey]; set => Set(PasswordKey, value); }
-    public string Url { get => _attributes[URLKey]; set => Set(URLKey, value); }
-    public string Notes { get => _attributes[NotesKey]; set => Set(NotesKey, value); }
+    public string Title
+    {
+        get => _attributes[TitleKey];
+        set => Set(TitleKey, value);
+    }
+    public string UserName
+    {
+        get => _attributes[UserNameKey];
+        set => Set(UserNameKey, value);
+    }
+    public string Password
+    {
+        get => _attributes[PasswordKey];
+        set => Set(PasswordKey, value);
+    }
+    public string Url
+    {
+        get => _attributes[URLKey];
+        set => Set(URLKey, value);
+    }
+    public string Notes
+    {
+        get => _attributes[NotesKey];
+        set => Set(NotesKey, value);
+    }
 
     // ── Keys ────────────────────────────────────────────────────────────────
 
@@ -74,7 +100,8 @@ public partial class EntryAttributes
     public bool Contains(string key) => _attributes.ContainsKey(key);
 
     /// <summary>True if any attribute has the given value.</summary>
-    public bool ContainsValue(string value) => _attributes.Values.Contains(value, StringComparer.Ordinal);
+    public bool ContainsValue(string value) =>
+        _attributes.Values.Contains(value, StringComparer.Ordinal);
 
     /// <summary>
     /// Sets <paramref name="key"/> to <paramref name="value"/>.
@@ -188,8 +215,7 @@ public partial class EntryAttributes
     // ── Passkey ─────────────────────────────────────────────────────────────
 
     /// <summary>True if this entry has passkey attributes.</summary>
-    public bool HasPasskey() =>
-        Keys.Any(IsPasskeyAttribute);
+    public bool HasPasskey() => Keys.Any(IsPasskeyAttribute);
 
     /// <summary>Removes all passkey attributes.</summary>
     public void RemovePasskeyAttributes()
@@ -233,9 +259,10 @@ public partial class EntryAttributes
     /// <summary>Returns additional URLs (KP2A_URL_1, KP2A_URL_2, etc.), excluding the primary URL.</summary>
     public IReadOnlyList<string> GetAdditionalUrls()
     {
-        return Keys
-            .Where(k => k.StartsWith(AdditionalUrlPrefix, StringComparison.OrdinalIgnoreCase)
-                        && k != AdditionalUrlPrefix)
+        return Keys.Where(k =>
+                k.StartsWith(AdditionalUrlPrefix, StringComparison.OrdinalIgnoreCase)
+                && k != AdditionalUrlPrefix
+            )
             .Select(k => _attributes[k])
             .Where(v => !string.IsNullOrEmpty(v))
             .ToList();
@@ -330,7 +357,9 @@ public partial class EntryAttributes
     public override bool Equals(object? obj) =>
         obj is EntryAttributes other
         && _attributes.Count == other._attributes.Count
-        && _attributes.All(kv => other._attributes.TryGetValue(kv.Key, out string? v) && v == kv.Value)
+        && _attributes.All(kv =>
+            other._attributes.TryGetValue(kv.Key, out string? v) && v == kv.Value
+        )
         && _protectedKeys.SetEquals(other._protectedKeys);
 
     public override int GetHashCode()
@@ -356,7 +385,8 @@ public partial class EntryAttributes
     /// <summary>Regex matching {REF:W@S:text} patterns.</summary>
     [GeneratedRegex(
         @"\{REF:(?<WantedField>[TUPANI])@(?<SearchIn>[TUPANIO]):(?<SearchText>(?:[^{}]|\{[^}]*\})+)\}",
-        RegexOptions.IgnoreCase)]
+        RegexOptions.IgnoreCase
+    )]
     private static partial Regex RefRegex();
 
     private static bool TryParseHexGuid(string hex, out Guid result)

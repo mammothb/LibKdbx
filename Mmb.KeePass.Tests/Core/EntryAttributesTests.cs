@@ -32,7 +32,7 @@ public class EntryAttributesTests
             UserName = "alice",
             Password = "secret",
             Url = "https://example.com",
-            Notes = "some notes"
+            Notes = "some notes",
         };
 
         attrs.Title.ShouldBe("MyTitle");
@@ -449,6 +449,5 @@ public class EntryAttributesTests
 
     // ── Member data ─────────────────────────────────────────────────────────
 
-    public static TheoryData<string> DefaultKeys =>
-        [.. EntryAttributes.DefaultAttributeKeys];
+    public static TheoryData<string> DefaultKeys => [.. EntryAttributes.DefaultAttributeKeys];
 }

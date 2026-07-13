@@ -54,15 +54,16 @@ public class TriStateTests
             "NULL" => TriState.Inherit,
             "TRUE" => TriState.Enable,
             "FALSE" => TriState.Disable,
-            _ => null
+            _ => null,
         };
     }
 
-    internal static string FormatTriState(TriState value) => value switch
-    {
-        TriState.Inherit => "null",
-        TriState.Enable => "True",
-        TriState.Disable => "False",
-        _ => throw new ArgumentOutOfRangeException(nameof(value))
-    };
+    internal static string FormatTriState(TriState value) =>
+        value switch
+        {
+            TriState.Inherit => "null",
+            TriState.Enable => "True",
+            TriState.Disable => "False",
+            _ => throw new ArgumentOutOfRangeException(nameof(value)),
+        };
 }
