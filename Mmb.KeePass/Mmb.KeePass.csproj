@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <!-- NuGet metadata -->
     <PackageId>Mmb.KeePass</PackageId>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <Authors>mammothb</Authors>
     <Description>C# library for KeePass (.kdbx) databases</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -16,5 +16,9 @@
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mmb.KeePass.Tests" />
   </ItemGroup>
 </Project>

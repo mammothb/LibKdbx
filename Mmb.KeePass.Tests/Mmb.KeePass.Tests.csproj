@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -17,11 +16,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Shouldly" Version="4.3.0" />
     <PackageReference Include="xunit.v3.mtp-v2" Version="3.2.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Mmb.KeePass\Mmb.KeePass.csproj" />
   </ItemGroup>
-
 </Project>
