@@ -24,7 +24,11 @@ public static class BinaryPoolBuilder
         return new BinaryPool(pool, hashToIndex);
     }
 
-    private static void CollectGroup(Group group, List<byte[]> pool, Dictionary<string, int> hashToIndex)
+    private static void CollectGroup(
+        Group group,
+        List<byte[]> pool,
+        Dictionary<string, int> hashToIndex
+    )
     {
         foreach (Entry entry in group.Entries)
         {
@@ -41,7 +45,11 @@ public static class BinaryPoolBuilder
         }
     }
 
-    private static void CollectEntry(Entry entry, List<byte[]> pool, Dictionary<string, int> hashToIndex)
+    private static void CollectEntry(
+        Entry entry,
+        List<byte[]> pool,
+        Dictionary<string, int> hashToIndex
+    )
     {
         foreach (string key in entry.Attachments.Keys)
         {

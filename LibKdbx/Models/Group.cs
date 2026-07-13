@@ -182,8 +182,7 @@ public class Group
 
     // ── Search ────────────────────────────────────────────────────────────
 
-    public Entry? FindEntry(string title) =>
-        FindEntry(e => e.Title == title);
+    public Entry? FindEntry(string title) => FindEntry(e => e.Title == title);
 
     public Entry? FindEntry(Func<Entry, bool> predicate)
     {
@@ -226,8 +225,7 @@ public class Group
         }
     }
 
-    public Group? FindGroup(string name) =>
-        FindGroup(g => g.Name == name);
+    public Group? FindGroup(string name) => FindGroup(g => g.Name == name);
 
     public Group? FindGroup(Func<Group, bool> predicate)
     {
