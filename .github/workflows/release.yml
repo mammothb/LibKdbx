@@ -29,7 +29,7 @@ jobs:
       - name: DotNet - Pack
         run: |
           dotnet pack \
-            Mmb.KeePass/Mmb.KeePass.csproj \
+            LibKdbx/LibKdbx.csproj \
             --no-build \
             --configuration Release \
             --output ./nupkgs

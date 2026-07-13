@@ -62,7 +62,7 @@ public class MetadataTests
     }
 
     [Fact]
-    public void Generator_Defaults_To_MmbKeePass()
+    public void Generator_Defaults_To_LibKdbx()
     {
         new Metadata().Generator.ShouldBe("LibKdbx");
     }
