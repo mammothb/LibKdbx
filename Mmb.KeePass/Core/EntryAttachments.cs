@@ -1,4 +1,4 @@
-namespace Mmb.KeePass;
+namespace LibKdbx;
 
 /// <summary>
 /// Key-value map of attachment filenames to binary data.

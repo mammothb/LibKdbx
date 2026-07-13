@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="Mmb.KeePass.Tests/Mmb.KeePass.Tests.csproj" />
-  <Project Path="Mmb.KeePass/Mmb.KeePass.csproj" />
+  <Project Path="LibKdbx.Tests/LibKdbx.Tests.csproj" />
+  <Project Path="LibKdbx/LibKdbx.csproj" />
 </Solution>

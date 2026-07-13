@@ -1,4 +1,4 @@
-namespace Mmb.KeePass;
+namespace LibKdbx;
 
 /// <summary>
 /// Arbitrary key-value metadata attached to Metadata, Groups, and Entries.

@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Mmb.KeePass;
+namespace LibKdbx;
 
 /// <summary>
 /// Stores an entry's attributes: five default keys (Title, UserName, Password, URL, Notes)

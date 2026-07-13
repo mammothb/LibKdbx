@@ -1,4 +1,4 @@
-namespace Mmb.KeePass;
+namespace LibKdbx;
 
 /// <summary>
 /// Three-state boolean for Group flags (EnableAutoType, EnableSearching).

@@ -1,4 +1,4 @@
-namespace Mmb.KeePass.Tests;
+namespace LibKdbx.Tests;
 
 public class MetadataTests
 {
@@ -64,7 +64,7 @@ public class MetadataTests
     [Fact]
     public void Generator_Defaults_To_MmbKeePass()
     {
-        new Metadata().Generator.ShouldBe("Mmb.KeePass");
+        new Metadata().Generator.ShouldBe("LibKdbx");
     }
 
     [Fact]

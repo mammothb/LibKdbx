@@ -1,11 +1,11 @@
-namespace Mmb.KeePass;
+namespace LibKdbx;
 
 public class Metadata
 {
     // ── Identification ─────────────────────────────────────────────────────
 
-    /// <summary>App name that generated this database. Defaults to "Mmb.KeePass".</summary>
-    public string Generator { get; set; } = "Mmb.KeePass";
+    /// <summary>App name that generated this database. Defaults to "LibKdbx".</summary>
+    public string Generator { get; set; } = "LibKdbx";
 
     public string Name { get; set; } = "";
     public DateTime? NameChanged { get; set; }

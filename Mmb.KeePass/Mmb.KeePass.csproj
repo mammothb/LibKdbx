@@ -4,12 +4,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <!-- NuGet metadata -->
-    <PackageId>Mmb.KeePass</PackageId>
+    <PackageId>LibKdbx</PackageId>
     <Version>0.2.0</Version>
     <Authors>mammothb</Authors>
     <Description>C# library for KeePass (.kdbx) databases</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/mammothb/Mmb.KeePass</RepositoryUrl>
+    <RepositoryUrl>https://github.com/mammothb/LibKdbx</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>keepass</PackageTags>
   </PropertyGroup>
@@ -19,6 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Mmb.KeePass.Tests" />
+    <InternalsVisibleTo Include="LibKdbx.Tests" />
   </ItemGroup>
 </Project>

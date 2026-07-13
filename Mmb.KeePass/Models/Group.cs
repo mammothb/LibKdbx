@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 
-namespace Mmb.KeePass;
+namespace LibKdbx;
 
 public class Group
 {
@@ -22,7 +22,7 @@ public class Group
     public TriState EnableAutoType { get; set; } = TriState.Inherit;
     public TriState EnableSearching { get; set; } = TriState.Inherit;
 
-    // ── New fields in Mmb.KeePass ─────────────────────────────────────────
+    // ── New fields in LibKdbx ─────────────────────────────────────────
 
     public string Tags { get; set; } = "";
     public string DefaultAutoTypeSequence { get; set; } = "";

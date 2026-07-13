@@ -1,4 +1,4 @@
-namespace Mmb.KeePass;
+namespace LibKdbx;
 
 /// <summary>
 /// Represents an entry or group permanently deleted from the recycle bin.

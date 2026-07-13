@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace Mmb.KeePass;
+namespace LibKdbx;
 
 /// <summary>
 /// Builds a deduplicated binary pool from all attachments in a Group tree.

@@ -1,4 +1,4 @@
-namespace Mmb.KeePass;
+namespace LibKdbx;
 
 public class Entry
 {
@@ -15,7 +15,7 @@ public class Entry
     public string OverrideUrl { get; set; } = "";
     public string Tags { get; set; } = "";
 
-    // ── New in Mmb.KeePass ────────────────────────────────────────────────
+    // ── New in LibKdbx ────────────────────────────────────────────────
 
     public CustomData? CustomData { get; set; }
     public Guid PreviousParentGroup { get; set; } // KDBX 4.1

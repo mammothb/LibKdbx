@@ -3,7 +3,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Mmb.KeePass.Tests</RootNamespace>
+    <RootNamespace>LibKdbx.Tests</RootNamespace>
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
 
@@ -21,6 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Mmb.KeePass\Mmb.KeePass.csproj" />
+    <ProjectReference Include="..\LibKdbx\LibKdbx.csproj" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,4 @@
-namespace Mmb.KeePass.Tests;
+namespace LibKdbx.Tests;
 
 public class EntryTests
 {

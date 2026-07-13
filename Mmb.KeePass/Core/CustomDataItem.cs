@@ -1,4 +1,4 @@
-namespace Mmb.KeePass;
+namespace LibKdbx;
 
 /// <summary>
 /// A single key-value pair in CustomData, with an optional last-modified timestamp.
