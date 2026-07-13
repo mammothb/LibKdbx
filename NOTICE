@@ -1,0 +1,31 @@
+Mmb.KeePass — C# library for KeePass (.kdbx) databases
+Copyright (C) 2026 Mmb
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program (see LICENSE).  If not, see <https://www.gnu.org/licenses/>.
+
+--------------------------------------------------------------------
+
+Uses KeePassXC (https://github.com/keepassxreboot/keepassxc) as the
+reference implementation for the KDBX file format. KeePassXC is
+licensed under GPL-2 or GPL-3.
+
+Upstream copyright:
+  Copyright (C) 2016-2023 KeePassXC Team <team@keepassxc.org>
+  Copyright (C) 2010-2012 Felix Geyer <debfx@fobos.de>
+  Copyright (C) 2011-2012 Florian Geyer <blueice@fobos.de>
+  Copyright (C) 2012 Tobias Tangemann
+
+Third-party dependencies:
+  BouncyCastle.Cryptography — MIT License (GPL-compatible)
+    https://github.com/bcgit/bc-csharp
