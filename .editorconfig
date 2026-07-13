@@ -80,6 +80,9 @@ dotnet_naming_style.camel_case_underscore_style.capitalization = camel_case
 
 # Code style defaults
 csharp_using_directive_placement = outside_namespace:suggestion
+
+# Library: flat namespace for consumers (Core/, Models/, etc. are internal organization)
+dotnet_diagnostic.IDE0130.severity = none
 dotnet_sort_system_directives_first = true
 csharp_prefer_braces = true:silent
 csharp_preserve_single_line_blocks = true:none
