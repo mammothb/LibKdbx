@@ -17,4 +17,8 @@
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Mmb.KeePass.Tests" />
+  </ItemGroup>
 </Project>
