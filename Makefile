@@ -10,7 +10,7 @@ test: build
 	dotnet test --configuration Release --no-build
 
 pack: test
-	dotnet pack Mmb.KeePass/Mmb.KeePass.csproj --configuration Release --no-build --output ./nupkgs
+	dotnet pack LibKdbx/LibKdbx.csproj --configuration Release --no-build --output ./nupkgs
 
 publish: pack
 	@echo "Package ready: ./nupkgs/"

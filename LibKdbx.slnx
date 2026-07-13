@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="LibKdbx.Tests/LibKdbx.Tests.csproj" />
+  <Project Path="LibKdbx/LibKdbx.csproj" />
+</Solution>
