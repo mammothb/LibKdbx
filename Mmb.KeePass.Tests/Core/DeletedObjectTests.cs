@@ -3,66 +3,66 @@ namespace Mmb.KeePass.Tests;
 public class DeletedObjectTests
 {
     [Fact]
-    public void DeletedObject_Constructor_SetsProperties()
+    public void Constructor_SetsProperties()
     {
-        var uuid = Guid.NewGuid();
-        var time = new DateTime(2024, 6, 15, 12, 0, 0, DateTimeKind.Utc);
+        Guid uuid = Guid.NewGuid();
+        DateTime time = new(2024, 6, 15, 12, 0, 0, DateTimeKind.Utc);
 
-        var del = new DeletedObject(uuid, time);
+        DeletedObject del = new(uuid, time);
 
         del.Uuid.ShouldBe(uuid);
         del.DeletionTime.ShouldBe(time);
     }
 
     [Fact]
-    public void DeletedObject_Equality_SameValues_AreEqual()
+    public void Equality_SameValues_AreEqual()
     {
-        var uuid = Guid.NewGuid();
+        Guid uuid = Guid.NewGuid();
         DateTime time = DateTime.UtcNow;
 
-        var a = new DeletedObject(uuid, time);
-        var b = new DeletedObject(uuid, time);
+        DeletedObject a = new(uuid, time);
+        DeletedObject b = new(uuid, time);
 
         a.ShouldBe(b);
         a.GetHashCode().ShouldBe(b.GetHashCode());
     }
 
     [Fact]
-    public void DeletedObject_Equality_DifferentUuid_AreNotEqual()
+    public void Equality_DifferentUuid_AreNotEqual()
     {
         DateTime time = DateTime.UtcNow;
-        var a = new DeletedObject(Guid.NewGuid(), time);
-        var b = new DeletedObject(Guid.NewGuid(), time);
+        DeletedObject a = new(Guid.NewGuid(), time);
+        DeletedObject b = new(Guid.NewGuid(), time);
 
         a.ShouldNotBe(b);
     }
 
     [Fact]
-    public void DeletedObject_Equality_DifferentTime_AreNotEqual()
+    public void Equality_DifferentTime_AreNotEqual()
     {
-        var uuid = Guid.NewGuid();
-        var a = new DeletedObject(uuid, new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc));
-        var b = new DeletedObject(uuid, new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        Guid uuid = Guid.NewGuid();
+        DeletedObject a = new(uuid, new(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        DeletedObject b = new(uuid, new(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc));
 
         a.ShouldNotBe(b);
     }
 
     [Fact]
-    public void DeletedObject_Default_HasEmptyUuid()
+    public void Default_HasEmptyUuid()
     {
         default(DeletedObject).Uuid.ShouldBe(Guid.Empty);
     }
 
     [Fact]
-    public void DeletedObject_Default_HasMinDateTime()
+    public void Default_HasMinDateTime()
     {
         default(DeletedObject).DeletionTime.ShouldBe(default);
     }
 
     [Fact]
-    public void DeletedObject_WithExpression_RetainsOtherProperty()
+    public void WithExpression_RetainsOtherProperty()
     {
-        var original = new DeletedObject(Guid.NewGuid(), DateTime.UtcNow);
+        DeletedObject original = new(Guid.NewGuid(), DateTime.UtcNow);
         DeletedObject modified = original with { DeletionTime = DateTime.MinValue };
 
         modified.Uuid.ShouldBe(original.Uuid);
