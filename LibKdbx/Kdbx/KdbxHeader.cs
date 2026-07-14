@@ -232,7 +232,7 @@ public class KdbxHeader : IHeader
             int parallelism = (int)(uint)KdfParameters["P"];
             int memoryKib = (int)((ulong)KdfParameters["M"] / 1024); // M is stored as bytes in KDBX
             int iterations = (int)(ulong)KdfParameters["I"];
-            Argon2Type type = kdfId == Argon2Kdf.Argon2idUuid ? Argon2Type.Id : Argon2Type.D;
+            Argon2Type type = kdfId == Argon2Kdf.Argon2dUuid ? Argon2Type.D : Argon2Type.Id;
             return new Argon2Kdf(salt, parallelism, memoryKib, iterations, type);
         }
 
