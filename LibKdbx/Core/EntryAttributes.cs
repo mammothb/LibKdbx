@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace LibKdbx;
@@ -95,6 +96,13 @@ public partial class EntryAttributes
     /// <summary>Gets the value for <paramref name="key"/>, or null if not found.</summary>
     public string? Get(string key) =>
         _attributes.TryGetValue(key, out string? value) ? value : null;
+
+    /// <summary>
+    /// Gets the value for <paramref name="key"/>.
+    /// Returns true if found, false otherwise.
+    /// </summary>
+    public bool TryGetValue(string key, [NotNullWhen(true)] out string? value) =>
+        _attributes.TryGetValue(key, out value);
 
     /// <summary>True if the key exists.</summary>
     public bool Contains(string key) => _attributes.ContainsKey(key);

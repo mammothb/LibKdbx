@@ -1,25 +1,355 @@
 namespace LibKdbx;
 
-/// <summary>
-/// Placeholder stub — full implementation in later phase.
-/// Provides the minimal surface Group and Entry need to compile.
-/// </summary>
-public class Database
+public class Database : IDisposable
 {
+    public FileInfo? FileInfo { get; private set; }
     public Metadata? Metadata { get; internal set; }
     public Group? RootGroup { get; internal set; }
+    public Settings Settings { get; set; } = new();
+    public Version Version { get; internal set; } = new();
+    public bool HasChanges { get; private set; }
 
-    internal void SetChanged() { }
+    private CompositeKey _key = new();
+    internal CompositeKey Key
+    {
+        get => _key;
+        set
+        {
+            _key.Dispose();
+            _key = value;
+        }
+    }
 
-    internal void IndexEntry(Entry entry) { }
+    private readonly Dictionary<Guid, Entry> _entryIndex = [];
 
-    internal void UnindexEntry(Entry entry) { }
+    /// <summary>Permanently deleted objects (UUID + deletion time).</summary>
+    public List<DeletedObject> DeletedObjects { get; } = [];
 
-    internal void IndexGroup(Group group) { }
+    // ── Constructors ──────────────────────────────────────────────────────
 
-    internal void UnindexGroup(Group group) { }
+    public Database() { }
 
-    internal bool IsRecycleBinEnabled() => Metadata?.RecycleBinEnabled ?? false;
+    public Database(CompositeKey key)
+    {
+        _key = key;
+    }
 
-    internal Group GetOrCreateRecycleBin() => RootGroup!; // stub
+    public Database(string path)
+    {
+        FileInfo = new FileInfo(path);
+    }
+
+    public Database(string path, CompositeKey key)
+    {
+        FileInfo = new FileInfo(path);
+        _key = key;
+    }
+
+    public Database(string path, string password)
+    {
+        FileInfo = new FileInfo(path);
+        _key = new CompositeKey(password);
+    }
+
+    public Database(string path, string password, string keyFile)
+    {
+        FileInfo = new FileInfo(path);
+        _key = new CompositeKey(password, keyFile);
+    }
+
+    // ── Factories ─────────────────────────────────────────────────────────
+
+    public static Database Create(string password, Settings? settings = null)
+    {
+        Settings s = settings ?? new Settings();
+        Database db = new(new CompositeKey(password))
+        {
+            Settings = s,
+            Version = s.Format == KdbxFormat.Kdbx4 ? new Version(4, 1) : new Version(3, 1),
+            Metadata = new Metadata(),
+            RootGroup = new Group { Name = "Root" },
+        };
+        db.RootGroup.SetDatabaseRecursive(db);
+        return db;
+    }
+
+    public static Database Create(string password, string keyFile, Settings? settings = null)
+    {
+        Settings s = settings ?? new Settings();
+        Database db = new(new CompositeKey(password, keyFile))
+        {
+            Settings = s,
+            Version = s.Format == KdbxFormat.Kdbx4 ? new Version(4, 1) : new Version(3, 1),
+            Metadata = new Metadata(),
+            RootGroup = new Group { Name = "Root" },
+        };
+        db.RootGroup.SetDatabaseRecursive(db);
+        return db;
+    }
+
+    // ── Open / Save ───────────────────────────────────────────────────────
+
+    public static Database Open(string path, string password, string? keyFile = null)
+    {
+        Database db = keyFile is not null
+            ? new Database(path, password, keyFile)
+            : new Database(path, password);
+        db.Open();
+        return db;
+    }
+
+    public void Open()
+    {
+        if (FileInfo is null)
+        {
+            throw new InvalidOperationException("No file path set.");
+        }
+
+        using Stream stream = FileInfo.OpenRead();
+        new KdbxReader(this).ReadFrom(stream);
+        HasChanges = false;
+    }
+
+    public void Save()
+    {
+        if (FileInfo is null)
+        {
+            throw new InvalidOperationException("No file path set.");
+        }
+
+        using Stream stream = FileInfo.Open(FileMode.Create);
+        new KdbxWriter(this).WriteTo(stream);
+        HasChanges = false;
+    }
+
+    public void SaveAs(string path)
+    {
+        FileInfo = new FileInfo(path);
+        Save();
+    }
+
+    // ── IDisposable ───────────────────────────────────────────────────────
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _key.Dispose();
+            Metadata = null;
+            RootGroup = null;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    // ── Index management ──────────────────────────────────────────────────
+
+    internal void SetChanged() => HasChanges = true;
+
+    internal void IndexEntry(Entry entry)
+    {
+        _entryIndex[entry.Uuid] = entry;
+    }
+
+    internal void UnindexEntry(Entry entry)
+    {
+        _entryIndex.Remove(entry.Uuid);
+    }
+
+    internal void IndexGroup(Group group)
+    {
+        foreach (Entry entry in group.Entries)
+        {
+            _entryIndex[entry.Uuid] = entry;
+        }
+        foreach (Group sub in group.Groups)
+        {
+            IndexGroup(sub);
+        }
+    }
+
+    internal void UnindexGroup(Group group)
+    {
+        foreach (Entry entry in group.Entries)
+        {
+            _entryIndex.Remove(entry.Uuid);
+        }
+        foreach (Group sub in group.Groups)
+        {
+            UnindexGroup(sub);
+        }
+    }
+
+    // ── Search ────────────────────────────────────────────────────────────
+
+    public Entry? FindEntry(string title) => RootGroup?.FindEntry(title);
+
+    public Entry? FindEntry(Func<Entry, bool> predicate) => RootGroup?.FindEntry(predicate);
+
+    public IEnumerable<Entry> FindAllEntries(Func<Entry, bool> predicate) =>
+        RootGroup?.FindAllEntries(predicate) ?? [];
+
+    public Group? FindGroup(string name) => RootGroup?.FindGroup(name);
+
+    public Group? FindGroup(Func<Group, bool> predicate) => RootGroup?.FindGroup(predicate);
+
+    public IEnumerable<Group> FindAllGroups(Func<Group, bool> predicate) =>
+        RootGroup?.FindAllGroups(predicate) ?? [];
+
+    public Entry? FindEntryByUuid(Guid uuid) =>
+        _entryIndex.TryGetValue(uuid, out Entry? entry) ? entry : null;
+
+    // ── Recycle bin ───────────────────────────────────────────────────────
+
+    public bool IsRecycleBinEnabled() => Metadata?.RecycleBinEnabled ?? false;
+
+    public Group? GetRecycleBin()
+    {
+        if (!IsRecycleBinEnabled() || Metadata?.RecycleBinUuid == Guid.Empty)
+        {
+            return null;
+        }
+        return FindGroup(Metadata!.RecycleBinUuid, RootGroup);
+    }
+
+    internal Group GetOrCreateRecycleBin()
+    {
+        if (RootGroup is null)
+        {
+            throw new InvalidOperationException("Database has no root group.");
+        }
+
+        Group? bin = FindGroup(Metadata?.RecycleBinUuid ?? Guid.Empty, RootGroup);
+        if (bin is not null)
+        {
+            return bin;
+        }
+
+        bin = new Group
+        {
+            Uuid = Metadata?.RecycleBinUuid ?? Guid.NewGuid(),
+            Name = "Recycle Bin",
+            IsExpanded = false,
+        };
+        RootGroup.AddGroup(bin);
+        return bin;
+    }
+
+    // ── Load wiring ───────────────────────────────────────────────────────
+
+    internal void SetupLoadedData(Metadata? meta, Group? root)
+    {
+        Metadata = meta;
+        RootGroup = root;
+        _entryIndex.Clear();
+        if (root is not null)
+        {
+            WireDatabase(root);
+        }
+    }
+
+    private void WireDatabase(Group group)
+    {
+        group.SetDatabaseRecursive(this);
+        foreach (Entry entry in group.Entries)
+        {
+            _entryIndex[entry.Uuid] = entry;
+        }
+        foreach (Group sub in group.Groups)
+        {
+            WireDatabase(sub);
+        }
+    }
+
+    // ── Reference resolution ──────────────────────────────────────────────
+
+    internal string ResolveField(Entry entry, string fieldName, int maxDepth = 10)
+    {
+        string? value = entry.Attributes.Get(fieldName) ?? "";
+        return ResolveValue(value, maxDepth);
+    }
+
+    private string ResolveValue(string value, int depth)
+    {
+        if (depth <= 0 || !FieldReference.TryParse(value, out FieldReference refInfo))
+        {
+            return value;
+        }
+
+        Entry? target = FindReferencedEntry(refInfo);
+        if (target is null)
+        {
+            return value;
+        }
+
+        string? fieldKey = FieldReference.FieldCodeToKey(refInfo.WantedField);
+        if (fieldKey is null)
+        {
+            return value;
+        }
+
+        if (!target.Attributes.TryGetValue(fieldKey, out string? resolved))
+        {
+            resolved = "";
+        }
+        return ResolveValue(resolved, depth - 1);
+    }
+
+    private Entry? FindReferencedEntry(FieldReference refInfo)
+    {
+        if (refInfo.SearchIn == 'I')
+        {
+            if (TryParseHexGuid(refInfo.SearchValue, out Guid uuid))
+            {
+                return _entryIndex.GetValueOrDefault(uuid);
+            }
+            return null;
+        }
+
+        string? fieldKey = FieldReference.FieldCodeToKey(refInfo.SearchIn);
+        if (fieldKey is null)
+        {
+            return null;
+        }
+
+        return _entryIndex.Values.FirstOrDefault(e =>
+            e.Attributes.Get(fieldKey) == refInfo.SearchValue
+        );
+    }
+
+    private static bool TryParseHexGuid(string hex, out Guid result)
+    {
+        result = Guid.Empty;
+        if (hex.Length != 32)
+        {
+            return false;
+        }
+        string formatted = $"{hex[..8]}-{hex[8..12]}-{hex[12..16]}-{hex[16..20]}-{hex[20..]}";
+        return Guid.TryParse(formatted, out result);
+    }
+
+    private static Group? FindGroup(Guid uuid, Group? root)
+    {
+        if (root is null)
+        {
+            return null;
+        }
+        if (root.Uuid == uuid)
+        {
+            return root;
+        }
+        foreach (Group sub in root.Groups)
+        {
+            Group? found = FindGroup(uuid, sub);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
 }

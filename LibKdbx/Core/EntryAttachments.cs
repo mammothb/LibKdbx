@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace LibKdbx;
 
 /// <summary>
@@ -20,6 +22,13 @@ public class EntryAttachments
 
     /// <summary>Gets the data for <paramref name="key"/>, or null if not found.</summary>
     public byte[]? Get(string key) => _attachments.TryGetValue(key, out byte[]? data) ? data : null;
+
+    /// <summary>
+    /// Gets the data for <paramref name="key"/>.
+    /// Returns true if found, false otherwise.
+    /// </summary>
+    public bool TryGetValue(string key, [NotNullWhen(true)] out byte[]? data) =>
+        _attachments.TryGetValue(key, out data);
 
     /// <summary>True if the attachment exists.</summary>
     public bool Contains(string key) => _attachments.ContainsKey(key);

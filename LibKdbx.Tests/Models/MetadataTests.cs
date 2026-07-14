@@ -76,10 +76,7 @@ public class MetadataTests
     [Fact]
     public void CustomData_Wired()
     {
-        Metadata m = new()
-        {
-            CustomData = new CustomData()
-        };
+        Metadata m = new() { CustomData = new CustomData() };
         m.CustomData.Set("key", "value");
         m.CustomData.GetValue("key").ShouldBe("value");
     }

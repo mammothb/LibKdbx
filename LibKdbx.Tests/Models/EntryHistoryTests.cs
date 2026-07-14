@@ -6,11 +6,7 @@ public class EntryHistoryTests
     {
         return new Database
         {
-            Metadata = new Metadata
-            {
-                HistoryMaxItems = maxItems,
-                HistoryMaxSize = maxSize,
-            },
+            Metadata = new Metadata { HistoryMaxItems = maxItems, HistoryMaxSize = maxSize },
         };
     }
 

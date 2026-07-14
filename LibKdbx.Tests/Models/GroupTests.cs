@@ -61,7 +61,7 @@ public class GroupTests
             EnableSearching = TriState.Disable,
             LastTopVisibleEntry = Guid.NewGuid(),
             PreviousParentGroup = Guid.NewGuid(),
-            CustomData = new CustomData()
+            CustomData = new CustomData(),
         };
         g.CustomData.Set("x", "y");
 
