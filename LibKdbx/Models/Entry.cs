@@ -109,6 +109,42 @@ public class Entry
         return clone;
     }
 
+    // ── EntrySearcher helpers ────────────────────────────────────────────
+
+    /// <summary>True if this entry is inside the recycle bin group.</summary>
+    internal bool IsRecycled()
+    {
+        if (ParentGroup is null || Database is null)
+        {
+            return false;
+        }
+        return ParentGroup.Uuid == Database.Metadata?.RecycleBinUuid;
+    }
+
+    /// <summary>True if this entry has an expiry date set and expires within <paramref name="days"/>.</summary>
+    internal bool WillExpireInDays(int days)
+    {
+        if (!Times.Expires)
+        {
+            return false;
+        }
+
+        if (Times.ExpiryTime <= DateTime.UtcNow)
+        {
+            return days == 0;
+        }
+
+        return (Times.ExpiryTime - DateTime.UtcNow).TotalDays <= days;
+    }
+
+    /// <summary>True if this entry has TOTP configured.</summary>
+    internal bool HasTotp()
+    {
+        return Attributes.Contains("TOTP Seed")
+            || Attributes.Contains("TOTP Settings")
+            || Attributes.Contains("otp");
+    }
+
     // ── Private ───────────────────────────────────────────────────────────
 
     /// <summary>
