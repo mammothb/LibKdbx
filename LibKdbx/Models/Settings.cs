@@ -11,7 +11,8 @@ public class Settings
     public KdbxFormat Format { get; set; } = KdbxFormat.Kdbx4;
     public CipherAlgorithm Cipher { get; set; } = CipherAlgorithm.ChaCha20;
     public bool IsCompressed { get; set; } = true;
-    public ProtectedStreamAlgorithm InnerStreamAlgorithm { get; set; } = ProtectedStreamAlgorithm.ChaCha20;
+    public ProtectedStreamAlgorithm InnerStreamAlgorithm { get; set; } =
+        ProtectedStreamAlgorithm.ChaCha20;
     public IKdf Kdf { get; set; } = DefaultArgon2id();
 
     // ── Database-level identities (KDBX 4.x public custom data) ──────────
@@ -77,22 +78,29 @@ public class Settings
             if (Kdf is not AesKdf aesKdf)
             {
                 throw new InvalidOperationException(
-                    "KDBX 3.x only supports AES-KDF. Set Kdf to an AesKdf instance.");
+                    "KDBX 3.x only supports AES-KDF. Set Kdf to an AesKdf instance."
+                );
             }
 
-            header = KdbxHeader.CreateNewV3(Cipher, InnerStreamAlgorithm, aesKdf.Rounds, IsCompressed);
+            header = KdbxHeader.CreateNewV3(
+                Cipher,
+                InnerStreamAlgorithm,
+                aesKdf.Rounds,
+                IsCompressed
+            );
         }
 
         return header;
     }
 
-    internal static Argon2Kdf DefaultArgon2id() => new(
-        salt: RandomNumberGenerator.GetBytes(32),
-        parallelism: 2,
-        memoryKib: 64 * 1024,
-        iterations: 2,
-        type: Argon2Type.Id
-    );
+    internal static Argon2Kdf DefaultArgon2id() =>
+        new(
+            salt: RandomNumberGenerator.GetBytes(32),
+            parallelism: 2,
+            memoryKib: 64 * 1024,
+            iterations: 2,
+            type: Argon2Type.Id
+        );
 
     // ── Public custom data serialization ──────────────────────────────────
 

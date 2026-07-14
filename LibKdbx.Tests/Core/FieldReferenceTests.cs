@@ -3,7 +3,12 @@ namespace LibKdbx.Tests;
 public class FieldReferenceTests
 {
     [Theory]
-    [InlineData("{REF:P@I:ABCDEF1234567890ABCDEF1234567890}", 'P', 'I', "ABCDEF1234567890ABCDEF1234567890")]
+    [InlineData(
+        "{REF:P@I:ABCDEF1234567890ABCDEF1234567890}",
+        'P',
+        'I',
+        "ABCDEF1234567890ABCDEF1234567890"
+    )]
     [InlineData("{REF:U@T:sometitle}", 'U', 'T', "sometitle")]
     [InlineData("{REF:A@N:notes text}", 'A', 'N', "notes text")]
     [InlineData("{REF:T@U:alice}", 'T', 'U', "alice")]

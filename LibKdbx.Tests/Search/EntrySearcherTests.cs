@@ -657,4 +657,32 @@ public class EntrySearcherTests
         results.Count.ShouldBe(1);
         results[0].Title.ShouldBe("GitLab");
     }
+
+    // ── is:expired-0 ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Is_Expired_0_Matches_Already_Expired()
+    {
+        Entry e = new()
+        {
+            Title = "Expired",
+            UserName = "bob",
+            Times = new Times { Expires = true, ExpiryTime = DateTime.UtcNow.AddDays(-1) },
+        };
+        Group root = new();
+        root.AddEntry(e);
+
+        List<Entry> results = CreateSearcher().Search("is:expired-0", root);
+        results.Count.ShouldBe(1);
+    }
+
+    // ── Undefined field without wildcard ────────────────────────────────────
+
+    [Fact]
+    public void Undefined_Search_Without_Wildcard_Matches_Substring()
+    {
+        (Group root, _) = CreateDbWithEntry("MySecretApp");
+        List<Entry> results = CreateSearcher().Search("Secret", root);
+        results.Count.ShouldBe(1);
+    }
 }

@@ -81,7 +81,6 @@ public class CompositeKey : IDisposable
     {
         byte[] data = File.ReadAllBytes(path);
 
-
         if (data.Length == 0)
         {
             throw new FormatException("Key file is empty.");

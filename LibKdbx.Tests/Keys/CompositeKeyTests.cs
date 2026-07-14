@@ -210,11 +210,12 @@ public class CompositeKeyTests
     {
         var doc = new XDocument(
             new XDeclaration("1.0", "utf-8", null),
-            new XElement("KeyFile",
-                new XElement("Meta",
-                    new XElement("Version", "1.0")),
-                new XElement("Key",
-                    new XElement("Data", Convert.ToBase64String(key32)))));
+            new XElement(
+                "KeyFile",
+                new XElement("Meta", new XElement("Version", "1.0")),
+                new XElement("Key", new XElement("Data", Convert.ToBase64String(key32)))
+            )
+        );
 
         string path = Path.GetTempFileName();
         using var ms = new MemoryStream();
