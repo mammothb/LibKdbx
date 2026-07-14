@@ -179,7 +179,7 @@ public class KdbxWriter(Database db)
         Stream output,
         ProtectedStreamAlgorithm algo,
         byte[] key,
-        IReadOnlyList<(bool IsProtected, byte[] Data)> binaries
+        IReadOnlyList<BinaryPoolEntry> binaries
     )
     {
         var writer = new BinaryWriter(output, Encoding.UTF8, leaveOpen: true);

@@ -17,10 +17,10 @@ public class KdbxXmlWriter
     private readonly Database _db;
     private readonly ProtectedStream _ps;
     private readonly bool _isV4;
-    private readonly List<(bool IsProtected, byte[] Data)> _binaryPool;
+    private readonly List<BinaryPoolEntry> _binaryPool;
 
     /// <summary>Binary pool, used by <see cref="KdbxWriter"/> to write the inner header.</summary>
-    public IReadOnlyList<(bool IsProtected, byte[] Data)> BinaryPool => _binaryPool;
+    public IReadOnlyList<BinaryPoolEntry> BinaryPool => _binaryPool;
 
     public KdbxXmlWriter(Database db, ProtectedStream ps, bool isV4)
     {
@@ -422,9 +422,9 @@ public class KdbxXmlWriter
 
     // ── Binary pool ─────────────────────────────────────────────────────
 
-    private List<(bool IsProtected, byte[] Data)> BuildBinaryPool()
+    private List<BinaryPoolEntry> BuildBinaryPool()
     {
-        var pool = new List<(bool IsProtected, byte[] Data)>();
+        var pool = new List<BinaryPoolEntry>();
         if (_db.RootGroup is null)
         {
             return pool;
@@ -433,7 +433,7 @@ public class KdbxXmlWriter
         BinaryPool builtPool = BinaryPoolBuilder.Build(_db.RootGroup);
         foreach (byte[] item in builtPool.Items)
         {
-            pool.Add((false, item));
+            pool.Add(new BinaryPoolEntry(false, item));
         }
 
         return pool;

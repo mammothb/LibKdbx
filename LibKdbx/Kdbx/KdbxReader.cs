@@ -102,11 +102,8 @@ public class KdbxReader(Database db)
         plainStream.Position = 0;
 
         var innerReader = new BinaryReader(plainStream);
-        (
-            ProtectedStreamAlgorithm algo,
-            byte[] innerKey,
-            List<(bool IsProtected, byte[] Data)> binaries
-        ) = ReadInnerHeader(innerReader);
+        (ProtectedStreamAlgorithm algo, byte[] innerKey, List<BinaryPoolEntry> binaries) =
+            ReadInnerHeader(innerReader);
 
         var ps = new ProtectedStream(algo, innerKey);
         _db.Settings = Settings.FromHeader(header, algo);
@@ -203,12 +200,12 @@ public class KdbxReader(Database db)
     private static (
         ProtectedStreamAlgorithm algo,
         byte[] key,
-        List<(bool IsProtected, byte[] Data)> binaries
+        List<BinaryPoolEntry> binaries
     ) ReadInnerHeader(BinaryReader reader)
     {
         ProtectedStreamAlgorithm algo = ProtectedStreamAlgorithm.ChaCha20;
         byte[]? key = null;
-        var binaries = new List<(bool IsProtected, byte[] Data)>();
+        var binaries = new List<BinaryPoolEntry>();
 
         while (true)
         {
@@ -229,7 +226,7 @@ public class KdbxReader(Database db)
                     key = data;
                     break;
                 case 0x03:
-                    binaries.Add((IsProtected: (data[0] & 0x01) != 0, Data: data[1..]));
+                    binaries.Add(new BinaryPoolEntry((data[0] & 0x01) != 0, data[1..]));
                     break;
             }
         }
