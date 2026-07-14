@@ -28,6 +28,7 @@ public class Group
     public string DefaultAutoTypeSequence { get; set; } = "";
     public Guid LastTopVisibleEntry { get; set; }
     public Guid PreviousParentGroup { get; set; } // KDBX 4.1
+    public MergeMode MergeMode { get; set; } = MergeMode.Default;
     public CustomData? CustomData { get; set; }
 
     // ── Children ──────────────────────────────────────────────────────────
@@ -159,6 +160,7 @@ public class Group
             DefaultAutoTypeSequence = DefaultAutoTypeSequence,
             LastTopVisibleEntry = LastTopVisibleEntry,
             PreviousParentGroup = PreviousParentGroup,
+            MergeMode = MergeMode,
             Times = Times.Clone(),
         };
         if (CustomData is not null)
