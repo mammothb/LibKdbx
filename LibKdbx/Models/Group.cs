@@ -266,8 +266,8 @@ public class Group
 
     public bool IsAncestorOf(Group group)
     {
-        Group? current = group;
-        while (current.ParentGroup is not null)
+        Group? current = group.ParentGroup;
+        while (current is not null)
         {
             if (current == this)
             {
