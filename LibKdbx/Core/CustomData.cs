@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace LibKdbx;
 
 /// <summary>
@@ -23,7 +25,7 @@ public class CustomData
     /// </summary>
     public CustomDataItem? GetItem(string key)
     {
-        return _data.TryGetValue(key, out var item) ? item : null;
+        return _data.TryGetValue(key, out CustomDataItem item) ? item : null;
     }
 
     /// <summary>
@@ -31,7 +33,22 @@ public class CustomData
     /// </summary>
     public string? GetValue(string key)
     {
-        return _data.TryGetValue(key, out var item) ? item.Value : null;
+        return _data.TryGetValue(key, out CustomDataItem item) ? item.Value : null;
+    }
+
+    /// <summary>
+    /// Gets the value for <paramref name="key"/>.
+    /// Returns true if found, false otherwise.
+    /// </summary>
+    public bool TryGetValue(string key, [NotNullWhen(true)] out string? value)
+    {
+        if (_data.TryGetValue(key, out CustomDataItem item))
+        {
+            value = item.Value;
+            return true;
+        }
+        value = null;
+        return false;
     }
 
     /// <summary>True if the key exists.</summary>
@@ -58,7 +75,7 @@ public class CustomData
     public void CopyFrom(CustomData other)
     {
         _data.Clear();
-        foreach (var (key, item) in other._data)
+        foreach ((string key, CustomDataItem item) in other._data)
         {
             _data[key] = item;
         }

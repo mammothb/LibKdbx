@@ -53,8 +53,7 @@ public static class BinaryPoolBuilder
     {
         foreach (string key in entry.Attachments.Keys)
         {
-            byte[]? data = entry.Attachments.Get(key);
-            if (data is null || data.Length == 0)
+            if (!entry.Attachments.TryGetValue(key, out byte[]? data) || data.Length == 0)
             {
                 continue;
             }

@@ -209,7 +209,7 @@ public class SymmetricCipher(CipherAlgorithm algorithm, byte[] key, byte[] iv)
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            if (_readBuffer == null)
+            if (_readBuffer is null)
             {
                 // Decrypt all ciphertext at once to handle PKCS7 padding correctly.
                 using var ms = new MemoryStream();

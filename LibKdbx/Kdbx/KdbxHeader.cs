@@ -166,14 +166,14 @@ public class KdbxHeader : IHeader
     {
         if (!IsVersion4)
         {
-            if (TransformSeed == null)
+            if (TransformSeed is null)
             {
                 throw new InvalidOperationException("TransformSeed missing from header.");
             }
             return new AesKdf(TransformSeed, TransformRounds);
         }
 
-        if (KdfParameters == null || !KdfParameters.TryGetValue("$UUID", out object? uuidBytes))
+        if (KdfParameters is null || !KdfParameters.TryGetValue("$UUID", out object? uuidBytes))
         {
             throw new InvalidOperationException("KdfParameters missing or has no $UUID.");
         }
@@ -271,14 +271,14 @@ public class KdbxHeader : IHeader
             sb.AppendLine($"InnerStreamId : {InnerRandomStreamId}");
             sb.AppendLine($"InnerStreamKey: {Hex(ProtectedStreamKey)}");
         }
-        else if (KdfParameters != null)
+        else if (KdfParameters is not null)
         {
             sb.AppendLine("KdfParameters :");
             sb.Append(KdfParameters.Dump());
         }
         return sb.ToString();
 
-        static string Hex(byte[]? b) => b == null ? "(null)" : BitConverter.ToString(b);
+        static string Hex(byte[]? b) => b is null ? "(null)" : BitConverter.ToString(b);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────
