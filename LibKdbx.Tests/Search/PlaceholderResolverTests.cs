@@ -456,4 +456,181 @@ public class PlaceholderResolverTests
         PlaceholderResolver.Classify("{title}").ShouldBe(PlaceholderType.Title);
         PlaceholderResolver.Classify("{url:host}").ShouldBe(PlaceholderType.UrlHost);
     }
+
+    [Fact]
+    public void Classify_T_CONV_Returns_Unknown()
+    {
+        PlaceholderResolver.Classify("{T-CONV:UPPER}").ShouldBe(PlaceholderType.Unknown);
+        PlaceholderResolver.Classify("{T-REPLACE-RX:pattern}").ShouldBe(PlaceholderType.Unknown);
+    }
+
+    // ── Edge cases ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Unmatched_Open_Brace_Treated_As_Literal()
+    {
+        Entry entry = CreateEntry();
+        Resolve(entry, "Hello {unmatched world").ShouldBe("Hello {unmatched world");
+    }
+
+    [Fact]
+    public void Empty_Url_Placeholders_Return_Empty()
+    {
+        Entry entry = CreateEntry();
+        entry.Url = "";
+        Resolve(entry, "{URL:SCM}").ShouldBe("");
+        Resolve(entry, "{URL:RMVSCM}").ShouldBe("");
+    }
+
+    [Fact]
+    public void UrlWithoutScheme_Alias()
+    {
+        Entry entry = CreateEntry();
+        string result = Resolve(entry, "{URL:WITHOUTSCHEME}");
+        result.ShouldContain("example.com");
+        result.ShouldNotContain("https://");
+    }
+
+    // ── DateTime UTC variants ───────────────────────────────────────────────
+
+    [Fact]
+    public void DateTimeUtc_Minute_Second()
+    {
+        Entry entry = CreateEntry();
+        string minute = Resolve(entry, "{DT_UTC_MINUTE}");
+        string second = Resolve(entry, "{DT_UTC_SECOND}");
+        minute.Length.ShouldBe(2);
+        int.Parse(minute).ShouldBeInRange(0, 59);
+        second.Length.ShouldBe(2);
+        int.Parse(second).ShouldBeInRange(0, 59);
+    }
+
+    [Fact]
+    public void DateTimeUtc_Month_Day_Hour()
+    {
+        Entry entry = CreateEntry();
+        Resolve(entry, "{DT_UTC_MONTH}").Length.ShouldBe(2);
+        Resolve(entry, "{DT_UTC_DAY}").Length.ShouldBe(2);
+        Resolve(entry, "{DT_UTC_HOUR}").Length.ShouldBe(2);
+    }
+
+    [Fact]
+    public void DateTime_Minute_Second()
+    {
+        Entry entry = CreateEntry();
+        string minute = Resolve(entry, "{DT_MINUTE}");
+        string second = Resolve(entry, "{DT_SECOND}");
+        minute.Length.ShouldBe(2);
+        second.Length.ShouldBe(2);
+    }
+
+    [Fact]
+    public void DateTime_Hour()
+    {
+        Entry entry = CreateEntry();
+        string hour = Resolve(entry, "{DT_HOUR}");
+        hour.Length.ShouldBe(2);
+        int.Parse(hour).ShouldBeInRange(0, 23);
+    }
+
+    // ── DbDir null FileInfo / DirectoryName ─────────────────────────────────
+
+    [Fact]
+    public void DbDir_Null_FileInfo_Returns_Empty()
+    {
+        using Database db = Database.Create("pw");
+        Entry entry = new() { Title = "E" };
+        db.RootGroup!.AddEntry(entry);
+        // Database has no FileInfo (not saved)
+        Resolve(entry, "{DB_DIR}").ShouldBe("");
+    }
+
+    // ── REF: SearchIn modes ─────────────────────────────────────────────────
+
+    [Fact]
+    public void Reference_SearchIn_O_CustomAttribute()
+    {
+        using Database db = Database.Create("pw");
+        Entry target = new() { Title = "Target", Password = "targetpass" };
+        target.Attributes.Set("Tag", "shared-value");
+        db.RootGroup!.AddEntry(target);
+
+        Entry source = new() { Title = "Source" };
+        source.Attributes.Set("Notes", "{REF:N@O:shared-value}");
+        db.RootGroup.AddEntry(source);
+
+        string resolved = Resolve(source, "{NOTES}");
+        resolved.ShouldBe(target.Notes);
+    }
+
+    [Fact]
+    public void Reference_SearchIn_FieldCode()
+    {
+        using Database db = Database.Create("pw");
+        Entry target = new() { Title = "Target", UserName = "bob" };
+        db.RootGroup!.AddEntry(target);
+
+        Entry source = new() { Title = "Source" };
+        source.Attributes.Set("Password", "{REF:P@T:Target}");
+        db.RootGroup.AddEntry(source);
+
+        string resolved = Resolve(source, "{PASSWORD}");
+        resolved.ShouldBe(target.Password);
+    }
+
+    [Fact]
+    public void Reference_Depth_Limit_Returns_Token()
+    {
+        using Database db = Database.Create("pw");
+        Entry target = new() { Title = "Target", UserName = "bob" };
+        db.RootGroup!.AddEntry(target);
+
+        Entry source = new() { Title = "Source" };
+        source.Attributes.Set("Notes", "{REF:N@T:Target}");
+        db.RootGroup.AddEntry(source);
+
+        // maxDepth=1: resolves {NOTES} → entry.Notes, but not the REF inside it
+        string resolved = PlaceholderResolver.Resolve(source, "{NOTES}", maxDepth: 1);
+        resolved.ShouldBe("{REF:N@T:Target}");
+    }
+
+    [Fact]
+    public void Reference_Null_Database_Returns_Token_Direct()
+    {
+        Entry entry = CreateEntry();
+        // Resolve REF directly from the token (not via field)
+        string result = Resolve(entry, "{REF:N@T:Target}");
+        result.ShouldBe("{REF:N@T:Target}");
+    }
+
+    [Fact]
+    public void UrlPassword_No_Colon_Returns_Empty()
+    {
+        Entry entry = CreateEntry();
+        entry.Url = "https://user@example.com";
+        Resolve(entry, "{URL:PASSWORD}").ShouldBe("");
+    }
+
+    [Fact]
+    public void UrlUserName_No_Colon_Returns_Whole()
+    {
+        Entry entry = CreateEntry();
+        entry.Url = "https://user@example.com";
+        Resolve(entry, "{URL:USERNAME}").ShouldBe("user");
+    }
+
+    // ── Classify remaining types ────────────────────────────────────────────
+
+    [Fact]
+    public void Classify_All_DateTime_Types()
+    {
+        PlaceholderResolver.Classify("{DT_HOUR}").ShouldBe(PlaceholderType.DateTimeHour);
+        PlaceholderResolver.Classify("{DT_MINUTE}").ShouldBe(PlaceholderType.DateTimeMinute);
+        PlaceholderResolver.Classify("{DT_SECOND}").ShouldBe(PlaceholderType.DateTimeSecond);
+        PlaceholderResolver.Classify("{DT_UTC_MONTH}").ShouldBe(PlaceholderType.DateTimeUtcMonth);
+        PlaceholderResolver.Classify("{DT_UTC_DAY}").ShouldBe(PlaceholderType.DateTimeUtcDay);
+        PlaceholderResolver.Classify("{DT_UTC_HOUR}").ShouldBe(PlaceholderType.DateTimeUtcHour);
+        PlaceholderResolver.Classify("{DT_UTC_MINUTE}").ShouldBe(PlaceholderType.DateTimeUtcMinute);
+        PlaceholderResolver.Classify("{DT_UTC_SECOND}").ShouldBe(PlaceholderType.DateTimeUtcSecond);
+    }
 }
