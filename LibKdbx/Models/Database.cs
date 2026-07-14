@@ -98,27 +98,71 @@ public class Database : IDisposable
         return db;
     }
 
+    /// <summary>
+    /// Opens a database file asynchronously.
+    /// The <paramref name="ct"/> governs file read I/O only.
+    /// KDF derivation, decryption, and XML parsing run synchronously after
+    /// the file bytes are loaded into memory.
+    /// </summary>
+    public static async Task<Database> OpenAsync(
+        string path,
+        string password,
+        string? keyFile = null,
+        CancellationToken ct = default
+    )
+    {
+        Database db = keyFile is not null
+            ? new Database(path, password, keyFile)
+            : new Database(path, password);
+        await db.OpenAsync(ct);
+        return db;
+    }
+
     public void Open()
+    {
+        // Delegate to async — safe because File.ReadAllBytesAsync has no
+        // SynchronizationContext affinity on thread-pool / console callers.
+        OpenAsync(CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Opens the database file asynchronously.
+    /// The <paramref name="ct"/> governs file read I/O only.
+    /// </summary>
+    public async Task OpenAsync(CancellationToken ct = default)
     {
         if (FileInfo is null)
         {
             throw new InvalidOperationException("No file path set.");
         }
 
-        using Stream stream = FileInfo.OpenRead();
-        new KdbxReader(this).ReadFrom(stream);
+        byte[] bytes = await File.ReadAllBytesAsync(FileInfo.FullName, ct);
+        await using MemoryStream ms = new(bytes);
+        new KdbxReader(this).ReadFrom(ms);
         HasChanges = false;
     }
 
     public void Save()
     {
+        SaveAsync(CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Saves the database to its file asynchronously.
+    /// The <paramref name="ct"/> governs file write I/O only.
+    /// XML serialization, encryption, and KDF derivation run synchronously
+    /// before the bytes are written.
+    /// </summary>
+    public async Task SaveAsync(CancellationToken ct = default)
+    {
         if (FileInfo is null)
         {
             throw new InvalidOperationException("No file path set.");
         }
 
-        using Stream stream = FileInfo.Open(FileMode.Create);
-        new KdbxWriter(this).WriteTo(stream);
+        await using MemoryStream ms = new();
+        new KdbxWriter(this).WriteTo(ms);
+        await File.WriteAllBytesAsync(FileInfo.FullName, ms.ToArray(), ct);
         HasChanges = false;
     }
 
@@ -126,6 +170,15 @@ public class Database : IDisposable
     {
         FileInfo = new FileInfo(path);
         Save();
+    }
+
+    /// <summary>
+    /// Changes the file path and saves asynchronously.
+    /// </summary>
+    public async Task SaveAsAsync(string path, CancellationToken ct = default)
+    {
+        FileInfo = new FileInfo(path);
+        await SaveAsync(ct);
     }
 
     // ── IDisposable ───────────────────────────────────────────────────────
