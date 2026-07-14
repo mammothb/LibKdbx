@@ -61,7 +61,6 @@ public class CompositeKey : IDisposable
         return SHA256.HashData(buffer);
     }
 
-#pragma warning disable CA1816
     public void Dispose()
     {
         if (_disposed)
@@ -74,8 +73,8 @@ public class CompositeKey : IDisposable
             Array.Clear(c);
         }
         _components.Clear();
+        GC.SuppressFinalize(this);
     }
-#pragma warning restore CA1816
 
     private static byte[] ReadKeyFile(string path)
     {
