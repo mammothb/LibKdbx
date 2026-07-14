@@ -232,7 +232,7 @@ public class KdbxHeader : IHeader
             return new Argon2Kdf(salt, parallelism, memoryKib, iterations, type);
         }
 
-        if (kdfId == AesKdf.Uuid)
+        if (kdfId == AesKdf.Uuid || kdfId == AesKdf.KeePassUuid)
         {
             byte[] seed = (byte[])KdfParameters["S"];
             ulong rounds = (ulong)KdfParameters["R"];

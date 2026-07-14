@@ -10,6 +10,7 @@ namespace LibKdbx;
 public class AesKdf(byte[] seed, ulong rounds) : IKdf
 {
     public static readonly Guid Uuid = new("c9d9f39a-628f-4a4f-ac40-f517aee355c1");
+    public static readonly Guid KeePassUuid = new("c9d9f39a-628a-4460-bf74-0d08c18a4fea");
 
     public byte[] Seed { get; } = seed;
     public ulong Rounds { get; } = rounds;
