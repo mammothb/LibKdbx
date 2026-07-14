@@ -233,6 +233,16 @@ public class KdbxXmlWriter
         {
             el.Add(new XElement("PreviousParentGroup", GuidToBase64(group.PreviousParentGroup)));
         }
+        if (group.MergeMode != MergeMode.Default)
+        {
+            string modeName = group.MergeMode switch
+            {
+                MergeMode.KeepNewer => "KeepNewer",
+                MergeMode.Synchronize => "Synchronize",
+                _ => "Default",
+            };
+            el.Add(new XElement("MergeMode", modeName));
+        }
         if (group.CustomData is { Count: > 0 })
         {
             el.Add(WriteCustomData(group.CustomData));

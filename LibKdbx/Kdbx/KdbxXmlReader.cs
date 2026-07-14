@@ -232,6 +232,7 @@ public class KdbxXmlReader(
             DefaultAutoTypeSequence = el.Element("DefaultAutoTypeSequence")?.Value ?? "",
             LastTopVisibleEntry = ParseUuid(el.Element("LastTopVisibleEntry")?.Value),
             PreviousParentGroup = ParseUuid(el.Element("PreviousParentGroup")?.Value),
+            MergeMode = ParseMergeMode(el.Element("MergeMode")?.Value),
             Times = ParseTimes(el.Element("Times")),
             CustomData = ParseCustomData(el.Element("CustomData")),
         };
@@ -470,6 +471,16 @@ public class KdbxXmlReader(
         return value.Equals("True", StringComparison.OrdinalIgnoreCase)
             ? TriState.Enable
             : TriState.Disable;
+    }
+
+    private static MergeMode ParseMergeMode(string? value)
+    {
+        return value switch
+        {
+            "KeepNewer" => MergeMode.KeepNewer,
+            "Synchronize" => MergeMode.Synchronize,
+            _ => MergeMode.Default,
+        };
     }
 
     private static byte[] Decompress(byte[] data)

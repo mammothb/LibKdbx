@@ -56,12 +56,22 @@ public class KdbxHeader : IHeader
     /// </summary>
     public byte[]? PublicCustomData { get; set; }
 
+    /// <summary>
+    /// SHA-256 hash of header fields for KDBX 3.x integrity verification.
+    /// Computed during <see cref="Write"/> and read during <see cref="Read"/>.
+    /// </summary>
+    public byte[]? HeaderHash { get; private set; }
+
     private KdbxHeader() { }
 
     // ── Factories ─────────────────────────────────────────────────────────
 
     internal static KdbxHeader CreateNewV3(
-        CipherAlgorithm cipher, ProtectedStreamAlgorithm algo, ulong rounds, bool compress)
+        CipherAlgorithm cipher,
+        ProtectedStreamAlgorithm algo,
+        ulong rounds,
+        bool compress
+    )
     {
         var h = new KdbxHeader()
         {
@@ -90,15 +100,19 @@ public class KdbxHeader : IHeader
             IsCompressed = compress,
             MasterSeed = RandomBytes(32),
             EncryptionIV = RandomBytes(GetIvSize(cipher)),
-            KdfParameters = kdf?.Parameters() ?? new VariantMap(new Dictionary<string, object>
-            {
-                ["$UUID"] = GuidRfc4122.ToBytes(Argon2Kdf.Argon2idUuid),
-                ["S"] = RandomBytes(32),
-                ["P"] = (uint)2,
-                ["M"] = (ulong)(64 * 1024 * 1024), // 64 MiB stored as bytes (KDBX convention)
-                ["I"] = (ulong)2,
-                ["V"] = (uint)0x13,
-            }),
+            KdfParameters =
+                kdf?.Parameters()
+                ?? new VariantMap(
+                    new Dictionary<string, object>
+                    {
+                        ["$UUID"] = GuidRfc4122.ToBytes(Argon2Kdf.Argon2idUuid),
+                        ["S"] = RandomBytes(32),
+                        ["P"] = (uint)2,
+                        ["M"] = (ulong)(64 * 1024 * 1024), // 64 MiB stored as bytes (KDBX convention)
+                        ["I"] = (ulong)2,
+                        ["V"] = (uint)0x13,
+                    }
+                ),
         };
         return h;
     }
@@ -107,7 +121,8 @@ public class KdbxHeader : IHeader
         bool v4 = true,
         CipherAlgorithm cipher = CipherAlgorithm.ChaCha20,
         bool compress = true,
-        ProtectedStreamAlgorithm innerAlgo = ProtectedStreamAlgorithm.ChaCha20)
+        ProtectedStreamAlgorithm innerAlgo = ProtectedStreamAlgorithm.ChaCha20
+    )
     {
         return v4
             ? CreateNewV4(cipher, kdf: null, compress)
@@ -143,19 +158,46 @@ public class KdbxHeader : IHeader
 
             switch (fieldId)
             {
-                case FieldId.EndOfHeader: return h;
-                case FieldId.CipherId: h.CipherId = GuidRfc4122.FromBytes(data); break;
-                case FieldId.CompressionFlags: h.IsCompressed = BinaryPrimitives.ReadUInt32LittleEndian(data) != 0; break;
-                case FieldId.MasterSeed: h.MasterSeed = data; break;
-                case FieldId.TransformSeed: h.TransformSeed = data; break;
-                case FieldId.TransformRounds: h.TransformRounds = BinaryPrimitives.ReadUInt64LittleEndian(data); break;
-                case FieldId.EncryptionIV: h.EncryptionIV = data; break;
-                case FieldId.ProtectedStreamKey: h.ProtectedStreamKey = data; break;
-                case FieldId.StreamStartBytes: h.StreamStartBytes = data; break;
-                case FieldId.InnerRandomStreamId: h.InnerRandomStreamId = (ProtectedStreamAlgorithm)BinaryPrimitives.ReadUInt32LittleEndian(data); break;
-                case FieldId.KdfParameters: h.KdfParameters = VariantMap.Read(data); break;
-                case FieldId.PublicCustomData: h.PublicCustomData = data; break;
-                    // Comment (0x01) is ignored
+                case FieldId.EndOfHeader:
+                    return h;
+                case FieldId.CipherId:
+                    h.CipherId = GuidRfc4122.FromBytes(data);
+                    break;
+                case FieldId.CompressionFlags:
+                    h.IsCompressed = BinaryPrimitives.ReadUInt32LittleEndian(data) != 0;
+                    break;
+                case FieldId.MasterSeed:
+                    h.MasterSeed = data;
+                    break;
+                case FieldId.TransformSeed:
+                    h.TransformSeed = data;
+                    break;
+                case FieldId.TransformRounds:
+                    h.TransformRounds = BinaryPrimitives.ReadUInt64LittleEndian(data);
+                    break;
+                case FieldId.EncryptionIV:
+                    h.EncryptionIV = data;
+                    break;
+                case FieldId.ProtectedStreamKey:
+                    h.ProtectedStreamKey = data;
+                    break;
+                case FieldId.StreamStartBytes:
+                    h.StreamStartBytes = data;
+                    break;
+                case FieldId.InnerRandomStreamId:
+                    h.InnerRandomStreamId = (ProtectedStreamAlgorithm)
+                        BinaryPrimitives.ReadUInt32LittleEndian(data);
+                    break;
+                case FieldId.KdfParameters:
+                    h.KdfParameters = VariantMap.Read(data);
+                    break;
+                case FieldId.PublicCustomData:
+                    h.PublicCustomData = data;
+                    break;
+                case (FieldId)0x0D:
+                    h.HeaderHash = data;
+                    break;
+                // Comment (0x01) is ignored
             }
         }
     }
@@ -232,7 +274,12 @@ public class KdbxHeader : IHeader
             WriteField(writer, FieldId.EncryptionIV, EncryptionIV, v4);
             WriteField(writer, FieldId.ProtectedStreamKey, ProtectedStreamKey!, v4);
             WriteField(writer, FieldId.StreamStartBytes, StreamStartBytes!, v4);
-            WriteField(writer, FieldId.InnerRandomStreamId, UInt32LE((uint)InnerRandomStreamId), v4);
+            WriteField(
+                writer,
+                FieldId.InnerRandomStreamId,
+                UInt32LE((uint)InnerRandomStreamId),
+                v4
+            );
         }
         else
         {
