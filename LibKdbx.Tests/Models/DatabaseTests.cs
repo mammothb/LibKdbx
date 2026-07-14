@@ -207,7 +207,7 @@ public class DatabaseTests
     public void Ctor_Default_Has_No_FileInfo()
     {
         using Database db = new();
-        db.FileInfo.ShouldBeNull();
+        db.DatabaseFile.ShouldBeNull();
     }
 
     [Fact]
@@ -215,14 +215,14 @@ public class DatabaseTests
     {
         using var key = new CompositeKey("test");
         using Database db = new(key);
-        db.FileInfo.ShouldBeNull();
+        db.DatabaseFile.ShouldBeNull();
     }
 
     [Fact]
     public void Ctor_Path_Only_Sets_FileInfo()
     {
         using Database db = new("/tmp/test.kdbx");
-        db.FileInfo!.FullName.ShouldBe("/tmp/test.kdbx");
+        db.DatabaseFile!.FullName.ShouldBe("/tmp/test.kdbx");
     }
 
     [Fact]
@@ -230,14 +230,14 @@ public class DatabaseTests
     {
         using var key = new CompositeKey("pw");
         using Database db = new("/tmp/test.kdbx", key);
-        db.FileInfo!.FullName.ShouldBe("/tmp/test.kdbx");
+        db.DatabaseFile!.FullName.ShouldBe("/tmp/test.kdbx");
     }
 
     [Fact]
     public void Ctor_Path_And_Password_Sets_Both()
     {
         using Database db = new("/tmp/test.kdbx", "hunter2");
-        db.FileInfo!.FullName.ShouldBe("/tmp/test.kdbx");
+        db.DatabaseFile!.FullName.ShouldBe("/tmp/test.kdbx");
     }
 
     [Fact]
@@ -250,7 +250,7 @@ public class DatabaseTests
         try
         {
             using Database db = new("/tmp/test.kdbx", "hunter2", keyPath);
-            db.FileInfo!.FullName.ShouldBe("/tmp/test.kdbx");
+            db.DatabaseFile!.FullName.ShouldBe("/tmp/test.kdbx");
         }
         finally
         {
@@ -599,11 +599,11 @@ public class DatabaseTests
             using Database db = Database.Create("pw");
             db.Metadata!.Name = "FirstSave";
             await db.SaveAsAsync(path1, ct);
-            db.FileInfo!.FullName.ShouldBe(path1);
+            db.DatabaseFile!.FullName.ShouldBe(path1);
 
             db.Metadata.Name = "SecondSave";
             await db.SaveAsAsync(path2, ct);
-            db.FileInfo.FullName.ShouldBe(path2);
+            db.DatabaseFile.FullName.ShouldBe(path2);
 
             // Verify first file unchanged, second file has new name
             using Database db1 = await Database.OpenAsync(path1, "pw", ct: ct);

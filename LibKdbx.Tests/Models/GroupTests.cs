@@ -163,7 +163,7 @@ public class GroupTests
         }
         finally
         {
-            File.Delete(db.FileInfo!.FullName);
+            File.Delete(db.DatabaseFile!.FullName);
         }
     }
 
@@ -228,7 +228,7 @@ public class GroupTests
         }
         finally
         {
-            File.Delete(db.FileInfo!.FullName);
+            File.Delete(db.DatabaseFile!.FullName);
         }
     }
 

@@ -143,7 +143,7 @@ public static class PlaceholderResolver
                 return entry.Uuid.ToString("N");
 
             case PlaceholderType.DbDir:
-                string? filePath = entry.Database?.FileInfo?.FullName;
+                string? filePath = entry.Database?.DatabaseFile?.FullName;
                 if (filePath is null)
                 {
                     return "";

@@ -2,7 +2,7 @@ namespace LibKdbx;
 
 public class Database : IDisposable
 {
-    public FileInfo? FileInfo { get; private set; }
+    public FileInfo? DatabaseFile { get; private set; }
     public Metadata? Metadata { get; internal set; }
     public Group? RootGroup { get; internal set; }
     public Settings Settings { get; set; } = new();
@@ -38,24 +38,24 @@ public class Database : IDisposable
 
     public Database(string path)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
     }
 
     public Database(string path, CompositeKey key)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
         _key = key;
     }
 
     public Database(string path, string password)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
         _key = new CompositeKey(password);
     }
 
     public Database(string path, string password, string keyFile)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
         _key = new CompositeKey(password, keyFile);
     }
 
@@ -133,12 +133,12 @@ public class Database : IDisposable
     /// </summary>
     public async Task OpenAsync(CancellationToken ct = default)
     {
-        if (FileInfo is null)
+        if (DatabaseFile is null)
         {
             throw new InvalidOperationException("No file path set.");
         }
 
-        byte[] bytes = await File.ReadAllBytesAsync(FileInfo.FullName, ct);
+        byte[] bytes = await File.ReadAllBytesAsync(DatabaseFile.FullName, ct);
         await using MemoryStream ms = new(bytes);
         new KdbxReader(this).ReadFrom(ms);
         HasChanges = false;
@@ -157,20 +157,20 @@ public class Database : IDisposable
     /// </summary>
     public async Task SaveAsync(CancellationToken ct = default)
     {
-        if (FileInfo is null)
+        if (DatabaseFile is null)
         {
             throw new InvalidOperationException("No file path set.");
         }
 
         await using MemoryStream ms = new();
         new KdbxWriter(this).WriteTo(ms);
-        await File.WriteAllBytesAsync(FileInfo.FullName, ms.ToArray(), ct);
+        await File.WriteAllBytesAsync(DatabaseFile.FullName, ms.ToArray(), ct);
         HasChanges = false;
     }
 
     public void SaveAs(string path)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
         Save();
     }
 
@@ -179,7 +179,7 @@ public class Database : IDisposable
     /// </summary>
     public async Task SaveAsAsync(string path, CancellationToken ct = default)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
         await SaveAsync(ct);
     }
 
