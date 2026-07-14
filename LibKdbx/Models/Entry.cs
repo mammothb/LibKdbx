@@ -109,6 +109,14 @@ public class Entry
         return clone;
     }
 
+    // ── Placeholder resolution ───────────────────────────────────────────
+
+    /// <summary>
+    /// Resolves all placeholders (e.g. <c>{TITLE}</c>, <c>{S:attr}</c>) in <paramref name="input"/>.
+    /// Delegates to <see cref="PlaceholderResolver.Resolve"/>.
+    /// </summary>
+    public string ResolvePlaceholder(string input) => PlaceholderResolver.Resolve(this, input);
+
     // ── EntrySearcher helpers ────────────────────────────────────────────
 
     /// <summary>True if this entry is inside the recycle bin group.</summary>

@@ -292,16 +292,17 @@ public partial class EntrySearcher(bool caseSensitive = false, bool skipProtecte
     }
 
     // ── Placeholder-aware value resolvers ────────────────────────────────────
-    // These return raw values for now. When Phase 3d (PlaceholderResolver) is
-    // complete, these should call PlaceholderResolver.Resolve(entry, ...).
 
-    private static string ResolveTitle(Entry entry) => entry.Title;
+    private static string ResolveTitle(Entry entry) =>
+        PlaceholderResolver.Resolve(entry, entry.Title);
 
-    private static string ResolveUserName(Entry entry) => entry.UserName;
+    private static string ResolveUserName(Entry entry) =>
+        PlaceholderResolver.Resolve(entry, entry.UserName);
 
-    private static string ResolvePassword(Entry entry) => entry.Password;
+    private static string ResolvePassword(Entry entry) =>
+        PlaceholderResolver.Resolve(entry, entry.Password);
 
-    private static string ResolveUrl(Entry entry) => entry.Url;
+    private static string ResolveUrl(Entry entry) => PlaceholderResolver.Resolve(entry, entry.Url);
 
     private static bool MatchAnyTag(Entry entry, Regex regex)
     {
