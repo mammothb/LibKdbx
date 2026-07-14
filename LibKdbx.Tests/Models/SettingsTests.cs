@@ -23,10 +23,10 @@ public class SettingsTests
             PublicIcon = 42,
         };
 
-        KdbxHeader header = settings.ToHeader();
+        KdbxHeader header = KdbxHeader.FromSettings(settings);
 
         // Read back through FromHeader
-        var roundTripped = Settings.FromHeader(header, ProtectedStreamAlgorithm.ChaCha20);
+        var roundTripped = header.CreateSettings(ProtectedStreamAlgorithm.ChaCha20);
         roundTripped.PublicName.ShouldBe("MyDB");
         roundTripped.PublicColor.ShouldBe("#FF0000");
         roundTripped.PublicIcon.ShouldBe(42);
@@ -38,8 +38,8 @@ public class SettingsTests
         Guid uuid = Guid.NewGuid();
         var settings = new Settings { PublicUuid = uuid };
 
-        KdbxHeader header = settings.ToHeader();
-        var roundTripped = Settings.FromHeader(header, ProtectedStreamAlgorithm.ChaCha20);
+        KdbxHeader header = KdbxHeader.FromSettings(settings);
+        var roundTripped = header.CreateSettings(ProtectedStreamAlgorithm.ChaCha20);
 
         roundTripped.PublicUuid.ShouldBe(uuid);
     }
@@ -55,7 +55,7 @@ public class SettingsTests
             PublicIcon = 0,
         };
 
-        KdbxHeader header = settings.ToHeader();
+        KdbxHeader header = KdbxHeader.FromSettings(settings);
         // Empty public custom data should not be written
         header.PublicCustomData.ShouldBeNull();
     }
@@ -65,7 +65,7 @@ public class SettingsTests
     {
         var settings = new Settings { Format = KdbxFormat.Kdbx3 };
         // Kdf defaults to Argon2
-        Should.Throw<InvalidOperationException>(settings.ToHeader);
+        Should.Throw<InvalidOperationException>(() => KdbxHeader.FromSettings(settings));
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public class SettingsTests
             Kdf = new AesKdf(new byte[16], 100_000),
         };
 
-        KdbxHeader header = settings.ToHeader();
+        KdbxHeader header = KdbxHeader.FromSettings(settings);
         header.IsVersion4.ShouldBeFalse();
     }
 
@@ -91,7 +91,7 @@ public class SettingsTests
             compress: false
         );
 
-        var settings = Settings.FromHeader(header, ProtectedStreamAlgorithm.Salsa20);
+        var settings = header.CreateSettings(ProtectedStreamAlgorithm.Salsa20);
         settings.Format.ShouldBe(KdbxFormat.Kdbx3);
         settings.Cipher.ShouldBe(CipherAlgorithm.Aes256Cbc);
         settings.IsCompressed.ShouldBeFalse();
@@ -101,7 +101,7 @@ public class SettingsTests
     public void FromHeader_V4_Reads_Format()
     {
         var header = KdbxHeader.CreateNewV4(CipherAlgorithm.ChaCha20, kdf: null, compress: true);
-        var settings = Settings.FromHeader(header, ProtectedStreamAlgorithm.ChaCha20);
+        var settings = header.CreateSettings(ProtectedStreamAlgorithm.ChaCha20);
         settings.Format.ShouldBe(KdbxFormat.Kdbx4);
         settings.Cipher.ShouldBe(CipherAlgorithm.ChaCha20);
         settings.IsCompressed.ShouldBeTrue();

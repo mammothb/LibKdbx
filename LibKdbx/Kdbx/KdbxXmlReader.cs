@@ -16,16 +16,16 @@ public class KdbxXmlReader(
     Database db,
     ProtectedStream ps,
     bool isV4,
-    IReadOnlyList<(bool IsProtected, byte[] Data)>? binaryPool = null
+    IReadOnlyList<BinaryPoolEntry>? binaryPool = null
 )
 {
     private readonly Database _db = db;
     private readonly ProtectedStream _ps = ps;
     private readonly bool _isV4 = isV4;
-    private readonly IReadOnlyList<(bool IsProtected, byte[] Data)> _binaryPool = binaryPool ?? [];
+    private readonly IReadOnlyList<BinaryPoolEntry> _binaryPool = binaryPool ?? [];
 
     // Set in ReadFrom: either _binaryPool (V4) or parsed from <Meta><Binaries> (V3)
-    private List<(bool IsProtected, byte[] Data)> _pool = [];
+    private List<BinaryPoolEntry> _pool = [];
 
     public void ReadFrom(Stream stream)
     {
@@ -70,7 +70,7 @@ public class KdbxXmlReader(
 
         XElement? memoryProtection = el.Element("MemoryProtection");
 
-        return new Metadata
+        Metadata meta = new Metadata
         {
             Generator = el.Element("Generator")?.Value ?? "",
             Name = el.Element("DatabaseName")?.Value ?? "",
@@ -99,9 +99,10 @@ public class KdbxXmlReader(
             ),
             LastSelectedGroup = ParseUuid(el.Element("LastSelectedGroup")?.Value),
             LastTopVisibleGroup = ParseUuid(el.Element("LastTopVisibleGroup")?.Value),
-            CustomIcons = ParseCustomIcons(el.Element("CustomIcons")),
             CustomData = ParseCustomData(el.Element("CustomData")),
         };
+        meta._customIcons.AddRange(ParseCustomIcons(el.Element("CustomIcons")));
+        return meta;
     }
 
     // ── Custom icons ─────────────────────────────────────────────────────
@@ -159,9 +160,9 @@ public class KdbxXmlReader(
 
     // ── Binary pool (KDBX 3.x) ───────────────────────────────────────────
 
-    private static List<(bool IsProtected, byte[] Data)> ParseMetaBinaries(XElement? metaEl)
+    private static List<BinaryPoolEntry> ParseMetaBinaries(XElement? metaEl)
     {
-        var pool = new List<(bool IsProtected, byte[] Data)>();
+        var pool = new List<BinaryPoolEntry>();
         XElement? binariesEl = metaEl?.Element("Binaries");
         if (binariesEl is null)
         {
@@ -188,9 +189,9 @@ public class KdbxXmlReader(
 
             while (pool.Count <= id)
             {
-                pool.Add((false, []));
+                pool.Add(new BinaryPoolEntry(false, []));
             }
-            pool[id] = (false, data);
+            pool[id] = new BinaryPoolEntry(false, data);
         }
 
         return pool;
@@ -210,7 +211,7 @@ public class KdbxXmlReader(
         {
             Guid uuid = ParseUuid(objEl.Element("UUID")?.Value);
             DateTime deletionTime = ParseDate(objEl.Element("DeletionTime")?.Value);
-            _db.DeletedObjects.Add(new DeletedObject(uuid, deletionTime));
+            _db._deletedObjects.Add(new DeletedObject(uuid, deletionTime));
         }
     }
 
@@ -290,7 +291,7 @@ public class KdbxXmlReader(
         {
             foreach (XElement histEntry in historyEl.Elements("Entry"))
             {
-                entry.History.Add(ParseEntry(histEntry));
+                entry._history.Add(ParseEntry(histEntry));
             }
         }
 
@@ -351,7 +352,8 @@ public class KdbxXmlReader(
                 continue;
             }
 
-            (_, byte[] data) = _pool[idx];
+            BinaryPoolEntry poolEntry = _pool[idx];
+            byte[] data = poolEntry.Data;
             entry.Attachments.Set(key, data);
         }
     }

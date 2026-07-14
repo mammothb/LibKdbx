@@ -258,6 +258,136 @@ public class KdbxHeader : IHeader
         ProtectedStreamKey = key;
     }
 
+    // ── Settings mapping ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates a new <see cref="KdbxHeader"/> from <paramref name="settings"/>
+    /// with fresh random seeds, IV, and KDF parameters.
+    /// </summary>
+    internal static KdbxHeader FromSettings(Settings settings)
+    {
+        KdbxHeader header;
+
+        if (settings.Format == KdbxFormat.Kdbx4)
+        {
+            header = CreateNewV4(settings.Cipher, settings.Kdf, settings.IsCompressed);
+
+            string pubData = BuildPublicCustomData(settings);
+            if (pubData.Length > 0)
+            {
+                header.PublicCustomData = Encoding.UTF8.GetBytes(pubData);
+            }
+        }
+        else
+        {
+            if (settings.Kdf is not AesKdf aesKdf)
+            {
+                throw new InvalidOperationException(
+                    "KDBX 3.x only supports AES-KDF. Set Kdf to an AesKdf instance."
+                );
+            }
+
+            header = CreateNewV3(
+                settings.Cipher,
+                settings.InnerStreamAlgorithm,
+                aesKdf.Rounds,
+                settings.IsCompressed
+            );
+        }
+
+        return header;
+    }
+
+    /// <summary>
+    /// Extracts <see cref="Settings"/> from this header.
+    /// </summary>
+    internal Settings CreateSettings(ProtectedStreamAlgorithm innerAlgo)
+    {
+        Settings settings = new()
+        {
+            Format = IsVersion4 ? KdbxFormat.Kdbx4 : KdbxFormat.Kdbx3,
+            Cipher = SymmetricCipher.FromUuid(CipherId),
+            IsCompressed = IsCompressed,
+            InnerStreamAlgorithm = innerAlgo,
+            Kdf = CreateKdf(),
+        };
+
+        if (PublicCustomData is { Length: > 0 } data)
+        {
+            ParsePublicCustomData(Encoding.UTF8.GetString(data), settings);
+        }
+
+        return settings;
+    }
+
+    private static string BuildPublicCustomData(Settings settings)
+    {
+        StringBuilder sb = new();
+
+        void Append(string key, string value)
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                sb.Append(key).Append(": ").Append(value).Append('\n');
+            }
+        }
+
+        if (settings.PublicUuid != Guid.Empty)
+        {
+            Append("PublicUUID", settings.PublicUuid.ToString("D"));
+        }
+        if (!string.IsNullOrEmpty(settings.PublicName))
+        {
+            Append("Name", settings.PublicName);
+        }
+        if (!string.IsNullOrEmpty(settings.PublicColor))
+        {
+            Append("Color", settings.PublicColor);
+        }
+        if (settings.PublicIcon != 0)
+        {
+            Append("Icon", settings.PublicIcon.ToString());
+        }
+
+        return sb.ToString();
+    }
+
+    private static void ParsePublicCustomData(string data, Settings settings)
+    {
+        foreach (string line in data.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            int colon = line.IndexOf(':');
+            if (colon < 0)
+            {
+                continue;
+            }
+            string key = line[..colon].Trim();
+            string value = line[(colon + 1)..].Trim();
+
+            switch (key)
+            {
+                case "PublicUUID":
+                    if (Guid.TryParse(value, out Guid uuid))
+                    {
+                        settings.PublicUuid = uuid;
+                    }
+                    break;
+                case "Name":
+                    settings.PublicName = value;
+                    break;
+                case "Color":
+                    settings.PublicColor = value;
+                    break;
+                case "Icon":
+                    if (int.TryParse(value, out int icon))
+                    {
+                        settings.PublicIcon = icon;
+                    }
+                    break;
+            }
+        }
+    }
+
     // ── Serialization ─────────────────────────────────────────────────────
 
     public void Write(BinaryWriter writer)

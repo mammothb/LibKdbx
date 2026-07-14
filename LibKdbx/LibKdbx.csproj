@@ -5,10 +5,10 @@
     <Nullable>enable</Nullable>
     <!-- NuGet metadata -->
     <PackageId>LibKdbx</PackageId>
-    <Version>0.2.1</Version>
+    <Version>0.3.0</Version>
     <Authors>mammothb</Authors>
     <Description>C# library for KeePass (.kdbx) databases</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/mammothb/LibKdbx</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>keepass</PackageTags>

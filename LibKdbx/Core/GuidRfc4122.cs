@@ -39,4 +39,19 @@ public static class GuidRfc4122
             b[14],
             b[15]
         );
+
+    /// <summary>
+    /// Parses a 32-character hex string (no dashes, no braces) into a <see cref="Guid"/>.
+    /// Returns true on success.
+    /// </summary>
+    internal static bool TryParseHex(string hex, out Guid result)
+    {
+        result = Guid.Empty;
+        if (hex.Length != 32)
+        {
+            return false;
+        }
+        string formatted = $"{hex[..8]}-{hex[8..12]}-{hex[12..16]}-{hex[16..20]}-{hex[20..]}";
+        return Guid.TryParse(formatted, out result);
+    }
 }

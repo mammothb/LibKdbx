@@ -20,7 +20,7 @@ public class KdbxWriter(Database db)
     {
         Settings settings =
             _db.Settings ?? throw new InvalidOperationException("Database has no Settings.");
-        KdbxHeader header = settings.ToHeader();
+        KdbxHeader header = KdbxHeader.FromSettings(settings);
         byte[] psKey = RandomNumberGenerator.GetBytes(64);
         var ps = new ProtectedStream(settings.InnerStreamAlgorithm, psKey);
 
@@ -179,7 +179,7 @@ public class KdbxWriter(Database db)
         Stream output,
         ProtectedStreamAlgorithm algo,
         byte[] key,
-        IReadOnlyList<(bool IsProtected, byte[] Data)> binaries
+        IReadOnlyList<BinaryPoolEntry> binaries
     )
     {
         var writer = new BinaryWriter(output, Encoding.UTF8, leaveOpen: true);

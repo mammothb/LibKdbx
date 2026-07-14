@@ -5,29 +5,35 @@ namespace LibKdbx;
 /// Matches groups and entries by UUID, resolves conflicts per <see cref="MergeMode"/>,
 /// merges history, deletions, and metadata.
 /// </summary>
-public static class Merger
+public class Merger
 {
     /// <summary>
-    /// Merges <paramref name="source"/> into <paramref name="target"/> in-place.
-    /// If <paramref name="dryRun"/> is true, no changes are written to target.
+    /// Default conflict resolution mode. Overridden per-group by
+    /// <see cref="Group.MergeMode"/> when set to anything other than
+    /// <see cref="MergeMode.Default"/>.
     /// </summary>
-    public static void Merge(
-        Database source,
-        Database target,
-        MergeMode defaultMode = MergeMode.Default,
-        bool dryRun = false
-    )
+    public MergeMode DefaultMode { get; set; } = MergeMode.Default;
+
+    /// <summary>
+    /// When true, no changes are written to <paramref name="target"/>.
+    /// </summary>
+    public bool DryRun { get; set; }
+
+    /// <summary>
+    /// Merges <paramref name="source"/> into <paramref name="target"/> in-place.
+    /// </summary>
+    public void Merge(Database source, Database target)
     {
         if (source.RootGroup is null || target.RootGroup is null)
         {
             throw new InvalidOperationException("Both databases must have a root group.");
         }
 
-        MergeGroup(source.RootGroup, target.RootGroup, defaultMode, dryRun);
-        MergeDeletions(source, target, defaultMode, dryRun);
-        MergeMetadata(source, target, dryRun);
+        MergeGroup(source.RootGroup, target.RootGroup);
+        MergeDeletions(source, target);
+        MergeMetadata(source, target);
 
-        if (!dryRun)
+        if (!DryRun)
         {
             target.SetChanged();
         }
@@ -35,14 +41,9 @@ public static class Merger
 
     // ── Group merge ───────────────────────────────────────────────────────
 
-    private static void MergeGroup(
-        Group sourceGroup,
-        Group targetGroup,
-        MergeMode defaultMode,
-        bool dryRun
-    )
+    private void MergeGroup(Group sourceGroup, Group targetGroup)
     {
-        MergeMode mode = defaultMode == MergeMode.Default ? targetGroup.MergeMode : defaultMode;
+        MergeMode mode = DefaultMode == MergeMode.Default ? targetGroup.MergeMode : DefaultMode;
 
         // Merge entries
         List<Entry> sourceEntries = [.. sourceGroup.Entries];
@@ -52,7 +53,7 @@ public static class Merger
 
             if (targetEntry is null)
             {
-                if (!dryRun)
+                if (!DryRun)
                 {
                     Entry clone = CloneEntry(sourceEntry);
                     targetGroup.AddEntry(clone);
@@ -60,7 +61,7 @@ public static class Merger
             }
             else
             {
-                MergeEntry(sourceEntry, targetEntry, mode, dryRun);
+                MergeEntry(sourceEntry, targetEntry, mode);
             }
         }
 
@@ -68,11 +69,11 @@ public static class Merger
         List<Group> sourceChildren = [.. sourceGroup.Groups];
         foreach (Group sourceChild in sourceChildren)
         {
-            Group? targetChild = FindGroupByUuid(sourceChild.Uuid, targetGroup);
+            Group? targetChild = targetGroup.FindDescendantByUuid(sourceChild.Uuid);
 
             if (targetChild is null)
             {
-                if (!dryRun)
+                if (!DryRun)
                 {
                     Group clone = CloneGroup(sourceChild, true);
                     targetGroup.AddGroup(clone);
@@ -81,15 +82,15 @@ public static class Merger
             }
             else
             {
-                MergeGroupConflict(sourceChild, targetChild, dryRun);
-                MergeGroup(sourceChild, targetChild, defaultMode, dryRun);
+                MergeGroupConflict(sourceChild, targetChild);
+                MergeGroup(sourceChild, targetChild);
             }
         }
     }
 
     // ── Entry merge ───────────────────────────────────────────────────────
 
-    private static void MergeEntry(Entry source, Entry target, MergeMode mode, bool dryRun)
+    private void MergeEntry(Entry source, Entry target, MergeMode mode)
     {
         DateTime targetTime = TruncateToSeconds(target.Times.LastModificationTime);
         DateTime sourceTime = TruncateToSeconds(source.Times.LastModificationTime);
@@ -98,19 +99,19 @@ public static class Merger
 
         if (!sourceNewer && mode != MergeMode.Synchronize)
         {
-            MergeHistory(source, target, null, sourceTime, targetTime, dryRun);
+            MergeHistory(source, target, null, sourceTime, targetTime);
             return;
         }
 
         // Capture target state before modification (for history)
         Entry? oldTarget = null;
-        if (!dryRun)
+        if (!DryRun)
         {
             oldTarget = target.Clone();
             oldTarget.Uuid = target.Uuid;
         }
 
-        if (!dryRun)
+        if (!DryRun)
         {
             target.IconId = source.IconId;
             target.CustomIconUuid = source.CustomIconUuid;
@@ -208,12 +209,12 @@ public static class Merger
                     : source.Times.LocationChanged;
         }
 
-        MergeHistory(source, target, oldTarget, sourceTime, targetTime, dryRun);
+        MergeHistory(source, target, oldTarget, sourceTime, targetTime);
     }
 
     // ── Group conflict ────────────────────────────────────────────────────
 
-    private static void MergeGroupConflict(Group source, Group target, bool dryRun)
+    private void MergeGroupConflict(Group source, Group target)
     {
         DateTime targetTime = TruncateToSeconds(target.Times.LastModificationTime);
         DateTime sourceTime = TruncateToSeconds(source.Times.LastModificationTime);
@@ -223,7 +224,7 @@ public static class Merger
             return;
         }
 
-        if (!dryRun)
+        if (!DryRun)
         {
             target.Name = source.Name;
             target.Notes = source.Notes;
@@ -243,16 +244,15 @@ public static class Merger
 
     // ── History merge ─────────────────────────────────────────────────────
 
-    private static void MergeHistory(
+    private void MergeHistory(
         Entry source,
         Entry target,
         Entry? oldTarget,
         DateTime sourceModTime,
-        DateTime targetModTime,
-        bool dryRun
+        DateTime targetModTime
     )
     {
-        if (dryRun)
+        if (DryRun)
         {
             return;
         }
@@ -287,24 +287,19 @@ public static class Merger
         // Sort by modification time, keep newest maxItems
         List<Entry> sorted = [.. merged.OrderBy(e => e.Times.LastModificationTime)];
 
-        target.History.Clear();
+        target._history.Clear();
         int skip = Math.Max(0, sorted.Count - maxItems);
         for (int i = skip; i < sorted.Count; i++)
         {
-            target.History.Add(sorted[i]);
+            target._history.Add(sorted[i]);
         }
     }
 
     // ── Deletions merge ───────────────────────────────────────────────────
 
-    private static void MergeDeletions(
-        Database source,
-        Database target,
-        MergeMode defaultMode,
-        bool dryRun
-    )
+    private void MergeDeletions(Database source, Database target)
     {
-        if (defaultMode != MergeMode.Synchronize)
+        if (DefaultMode != MergeMode.Synchronize)
         {
             return;
         }
@@ -322,7 +317,7 @@ public static class Merger
         {
             if (sourceDeletionUuids.Contains(entry.Uuid))
             {
-                if (!dryRun && entry.ParentGroup is not null)
+                if (!DryRun && entry.ParentGroup is not null)
                 {
                     entry.ParentGroup.RemoveEntry(entry);
                 }
@@ -340,7 +335,7 @@ public static class Merger
                 && group.ParentGroup is not null
             )
             {
-                if (!dryRun)
+                if (!DryRun)
                 {
                     group.ParentGroup.RemoveGroup(group);
                 }
@@ -348,14 +343,14 @@ public static class Merger
         }
 
         // Union DeletedObjects into target
-        if (!dryRun)
+        if (!DryRun)
         {
             HashSet<Guid> targetDeletionUuids = [.. target.DeletedObjects.Select(d => d.Uuid)];
             foreach (DeletedObject obj in source.DeletedObjects)
             {
                 if (!targetDeletionUuids.Contains(obj.Uuid))
                 {
-                    target.DeletedObjects.Add(obj);
+                    target._deletedObjects.Add(obj);
                 }
             }
         }
@@ -363,9 +358,9 @@ public static class Merger
 
     // ── Metadata merge ────────────────────────────────────────────────────
 
-    private static void MergeMetadata(Database source, Database target, bool dryRun)
+    private void MergeMetadata(Database source, Database target)
     {
-        if (dryRun || source.Metadata is null || target.Metadata is null)
+        if (DryRun || source.Metadata is null || target.Metadata is null)
         {
             return;
         }
@@ -402,26 +397,6 @@ public static class Merger
         }
 
         return root.FindEntry(e => e.Uuid == uuid);
-    }
-
-    private static Group? FindGroupByUuid(Guid uuid, Group root)
-    {
-        Group? found = null;
-        Queue<Group> queue = new([root]);
-        while (queue.Count > 0)
-        {
-            Group g = queue.Dequeue();
-            if (g.Uuid == uuid)
-            {
-                found = g;
-                break;
-            }
-            foreach (Group child in g.Groups)
-            {
-                queue.Enqueue(child);
-            }
-        }
-        return found;
     }
 
     private static Entry CloneEntry(Entry source)

@@ -18,7 +18,7 @@ public class MergerTests
         target.RootGroup!.Name = "TargetRoot";
         target.RootGroup.AddEntry(new Entry { Title = "Existing", Uuid = Guid.NewGuid() });
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.RootGroup.Name.ShouldBe("TargetRoot");
         target.RootGroup.Entries.Count.ShouldBe(1);
@@ -31,7 +31,7 @@ public class MergerTests
         Guid entryUuid = Guid.NewGuid();
         source.RootGroup!.AddEntry(new Entry { Title = "NewEntry", Uuid = entryUuid });
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.RootGroup!.Entries.Count.ShouldBe(1);
         target.RootGroup.Entries[0].Title.ShouldBe("NewEntry");
@@ -47,7 +47,7 @@ public class MergerTests
         sub.AddEntry(new Entry { Title = "SubEntry" });
         source.RootGroup!.AddGroup(sub);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.RootGroup!.Groups.Count.ShouldBe(1);
         Group merged = target.RootGroup.Groups[0];
@@ -73,7 +73,7 @@ public class MergerTests
         targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.RootGroup.Entries[0].Title.ShouldBe("SourceTitle");
     }
@@ -92,7 +92,7 @@ public class MergerTests
         targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 10);
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.RootGroup.Entries[0].Title.ShouldBe("TargetTitle");
     }
@@ -111,7 +111,7 @@ public class MergerTests
         targetEntry.Times.LastModificationTime = new DateTime(2025, 6, 1);
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target, MergeMode.Synchronize);
+        new Merger { DefaultMode = MergeMode.Synchronize }.Merge(source, target);
 
         target.RootGroup.Entries[0].Title.ShouldBe("SourceOld");
     }
@@ -154,7 +154,7 @@ public class MergerTests
         targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         Entry result = target.RootGroup.Entries[0];
         result.Title.ShouldBe("S_Title");
@@ -188,7 +188,7 @@ public class MergerTests
         targetEntry.Attributes.Set("C", "3");
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         Entry result = target.RootGroup.Entries[0];
         result.Attributes.Get("A").ShouldBe("1"); // added from source
@@ -213,7 +213,7 @@ public class MergerTests
         targetEntry.Attributes.Set("Drop", "gone");
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target, MergeMode.Synchronize);
+        new Merger { DefaultMode = MergeMode.Synchronize }.Merge(source, target);
 
         Entry result = target.RootGroup.Entries[0];
         result.Attributes.Get("Keep").ShouldBe("yes");
@@ -237,7 +237,7 @@ public class MergerTests
         targetEntry.Attachments.Set("drop.txt", "bye"u8.ToArray());
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target, MergeMode.Synchronize);
+        new Merger { DefaultMode = MergeMode.Synchronize }.Merge(source, target);
 
         Entry result = target.RootGroup.Entries[0];
         result.Attachments.Contains("keep.txt").ShouldBeTrue();
@@ -263,7 +263,7 @@ public class MergerTests
         targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         Entry result = target.RootGroup.Entries[0];
         result.AutoType.Enabled.ShouldBeFalse();
@@ -298,7 +298,7 @@ public class MergerTests
         targetGroup.Times.LastModificationTime = new DateTime(2025, 1, 1);
         target.RootGroup!.AddGroup(targetGroup);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         Group result = target.RootGroup.Groups[0];
         result.Name.ShouldBe("SourceName");
@@ -319,7 +319,7 @@ public class MergerTests
         targetGroup.Times.LastModificationTime = new DateTime(2025, 2, 1);
         target.RootGroup!.AddGroup(targetGroup);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.RootGroup.Groups[0].Name.ShouldBe("TargetName");
     }
@@ -339,7 +339,7 @@ public class MergerTests
         sourceWork.AddGroup(sourceDev);
         source.RootGroup!.AddGroup(sourceWork);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.RootGroup!.Groups.Count.ShouldBe(1);
         Group work = target.RootGroup.Groups[0];
@@ -358,16 +358,16 @@ public class MergerTests
         Guid uuid = Guid.NewGuid();
 
         target.RootGroup!.AddEntry(new Entry { Title = "ToDelete", Uuid = uuid });
-        source.DeletedObjects.Add(
+        source._deletedObjects.Add(
             new DeletedObject { Uuid = uuid, DeletionTime = DateTime.UtcNow }
         );
 
         // Default mode: deletion NOT applied
-        Merger.Merge(source, target, MergeMode.Default);
+        new Merger().Merge(source, target);
         target.RootGroup.Entries.Count.ShouldBe(1);
 
         // Synchronize mode: deletion IS applied
-        Merger.Merge(source, target, MergeMode.Synchronize);
+        new Merger { DefaultMode = MergeMode.Synchronize }.Merge(source, target);
         target.RootGroup.Entries.Count.ShouldBe(0);
     }
 
@@ -379,10 +379,10 @@ public class MergerTests
         var objA = new DeletedObject { Uuid = Guid.NewGuid(), DeletionTime = DateTime.UtcNow };
         var objB = new DeletedObject { Uuid = Guid.NewGuid(), DeletionTime = DateTime.UtcNow };
 
-        source.DeletedObjects.Add(objA);
-        target.DeletedObjects.Add(objB);
+        source._deletedObjects.Add(objA);
+        target._deletedObjects.Add(objB);
 
-        Merger.Merge(source, target, MergeMode.Synchronize);
+        new Merger { DefaultMode = MergeMode.Synchronize }.Merge(source, target);
 
         target.DeletedObjects.Count.ShouldBe(2);
         target.DeletedObjects.Select(d => d.Uuid).ShouldContain(objA.Uuid);
@@ -399,14 +399,14 @@ public class MergerTests
 
         Entry sourceEntry = new() { Title = "S_v2", Uuid = uuid };
         sourceEntry.Times.LastModificationTime = new DateTime(2025, 3, 1);
-        sourceEntry.History.Add(new Entry { Title = "S_v1" });
+        sourceEntry._history.Add(new Entry { Title = "S_v1" });
         source.RootGroup!.AddEntry(sourceEntry);
 
         Entry targetEntry = new() { Title = "T_v1", Uuid = uuid };
         targetEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         // Source is newer → target becomes history, source becomes current
         Entry result = target.RootGroup.Entries[0];
@@ -424,15 +424,15 @@ public class MergerTests
 
         Entry sourceEntry = new() { Title = "S_v1", Uuid = uuid };
         sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
-        sourceEntry.History.Add(new Entry { Title = "S_v0" });
+        sourceEntry._history.Add(new Entry { Title = "S_v0" });
         source.RootGroup!.AddEntry(sourceEntry);
 
         Entry targetEntry = new() { Title = "T_v2", Uuid = uuid };
         targetEntry.Times.LastModificationTime = new DateTime(2025, 3, 1);
-        targetEntry.History.Add(new Entry { Title = "T_v1" });
+        targetEntry._history.Add(new Entry { Title = "T_v1" });
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         // Target is newer → keeps target, source becomes history
         Entry result = target.RootGroup.Entries[0];
@@ -453,17 +453,17 @@ public class MergerTests
 
         Entry sourceEntry = new() { Title = "S", Uuid = uuid };
         sourceEntry.Times.LastModificationTime = new DateTime(2025, 4, 1);
-        sourceEntry.History.Add(new Entry { Title = "H3" });
-        sourceEntry.History.Add(new Entry { Title = "H4" });
+        sourceEntry._history.Add(new Entry { Title = "H3" });
+        sourceEntry._history.Add(new Entry { Title = "H4" });
         source.RootGroup!.AddEntry(sourceEntry);
 
         Entry targetEntry = new() { Title = "T", Uuid = uuid };
         targetEntry.Times.LastModificationTime = new DateTime(2025, 3, 1);
-        targetEntry.History.Add(new Entry { Title = "H1" });
-        targetEntry.History.Add(new Entry { Title = "H2" });
+        targetEntry._history.Add(new Entry { Title = "H1" });
+        targetEntry._history.Add(new Entry { Title = "H2" });
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.RootGroup.Entries[0].History.Count.ShouldBeLessThanOrEqualTo(2);
     }
@@ -479,7 +479,7 @@ public class MergerTests
         Entry sourceEntry = new() { Title = "SourceOnly", Uuid = uuid };
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Merger.Merge(source, target, dryRun: true);
+        new Merger { DryRun = true }.Merge(source, target);
 
         // Target unchanged
         target.RootGroup!.Entries.Count.ShouldBe(0);
@@ -499,7 +499,7 @@ public class MergerTests
         targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target, dryRun: true);
+        new Merger { DryRun = true }.Merge(source, target);
 
         target.RootGroup.Entries[0].Title.ShouldBe("OldTitle");
     }
@@ -519,7 +519,7 @@ public class MergerTests
         target.Metadata.CustomData.Set("B", "target_b");
         target.Metadata.CustomData.Set("C", "target_c");
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.Metadata.CustomData!.GetValue("A").ShouldBe("source_a");
         target.Metadata.CustomData.GetValue("B").ShouldBe("source_b");
@@ -538,7 +538,7 @@ public class MergerTests
         sourceBin.AddEntry(new Entry { Title = "DeletedEntry" });
         source.RootGroup!.AddEntry(new Entry { Title = "ActiveEntry" });
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         // Target gets active entry but recycle bin is not duplicated
         target.RootGroup!.Entries.Count.ShouldBe(1);
@@ -553,7 +553,7 @@ public class MergerTests
         Database noRoot = new(new CompositeKey("pw"));
 
         Should.Throw<InvalidOperationException>(() =>
-            Merger.Merge(noRoot, Database.Create("target"))
+            new Merger().Merge(noRoot, Database.Create("target"))
         );
     }
 
@@ -575,7 +575,7 @@ public class MergerTests
         targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
         target.RootGroup!.AddEntry(targetEntry);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.RootGroup.Entries[0].CustomData!.GetValue("Plugin").ShouldBe("enabled");
     }
@@ -598,7 +598,7 @@ public class MergerTests
         targetGroup.Notes = "FromTarget";
         target.RootGroup!.AddGroup(targetGroup);
 
-        Merger.Merge(source, target, MergeMode.Synchronize);
+        new Merger { DefaultMode = MergeMode.Synchronize }.Merge(source, target);
 
         Group result = target.RootGroup.Groups[0];
         // Synchronize: source overwrites regardless of time
@@ -621,7 +621,7 @@ public class MergerTests
         a.AddGroup(b);
         source.RootGroup!.AddGroup(a);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         Group resultA = target.RootGroup!.Groups[0];
         resultA.Name.ShouldBe("A");
@@ -644,7 +644,7 @@ public class MergerTests
         source.RootGroup!.AddGroup(g1);
         source.RootGroup.AddGroup(g2);
 
-        Merger.Merge(source, target);
+        new Merger().Merge(source, target);
 
         target.RootGroup!.Groups.Count.ShouldBe(2);
         target.RootGroup.Groups[0].Entries[0].Title.ShouldBe("E1");

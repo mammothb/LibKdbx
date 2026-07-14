@@ -17,17 +17,19 @@ public class KdbxXmlWriter
     private readonly Database _db;
     private readonly ProtectedStream _ps;
     private readonly bool _isV4;
-    private readonly List<(bool IsProtected, byte[] Data)> _binaryPool;
+    private readonly List<BinaryPoolEntry> _binaryPool;
+    private readonly BinaryPool? _binaryPoolData;
 
     /// <summary>Binary pool, used by <see cref="KdbxWriter"/> to write the inner header.</summary>
-    public IReadOnlyList<(bool IsProtected, byte[] Data)> BinaryPool => _binaryPool;
+    public IReadOnlyList<BinaryPoolEntry> BinaryPool => _binaryPool;
 
     public KdbxXmlWriter(Database db, ProtectedStream ps, bool isV4)
     {
         _db = db;
         _ps = ps;
         _isV4 = isV4;
-        _binaryPool = BuildBinaryPool();
+        _binaryPoolData = _db.RootGroup is not null ? BinaryPoolBuilder.Build(_db.RootGroup) : null;
+        _binaryPool = BuildBinaryPoolFrom(_binaryPoolData);
     }
 
     public void WriteTo(Stream stream)
@@ -422,18 +424,15 @@ public class KdbxXmlWriter
 
     // ── Binary pool ─────────────────────────────────────────────────────
 
-    private List<(bool IsProtected, byte[] Data)> BuildBinaryPool()
+    private static List<BinaryPoolEntry> BuildBinaryPoolFrom(BinaryPool? data)
     {
-        var pool = new List<(bool IsProtected, byte[] Data)>();
-        if (_db.RootGroup is null)
+        var pool = new List<BinaryPoolEntry>();
+        if (data is not null)
         {
-            return pool;
-        }
-
-        BinaryPool builtPool = BinaryPoolBuilder.Build(_db.RootGroup);
-        foreach (byte[] item in builtPool.Items)
-        {
-            pool.Add((false, item));
+            foreach (byte[] item in data.Items)
+            {
+                pool.Add(new BinaryPoolEntry(false, item));
+            }
         }
 
         return pool;
@@ -441,12 +440,7 @@ public class KdbxXmlWriter
 
     private int GetBinaryIndex(byte[] data)
     {
-        if (_db.RootGroup is null)
-        {
-            return -1;
-        }
-        BinaryPool builtPool = BinaryPoolBuilder.Build(_db.RootGroup);
-        return builtPool.GetIndex(data);
+        return _binaryPoolData?.GetIndex(data) ?? -1;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────

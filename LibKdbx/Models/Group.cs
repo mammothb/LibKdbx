@@ -264,6 +264,27 @@ public class Group
         }
     }
 
+    /// <summary>
+    /// Searches this group and all descendants for a group with the given UUID.
+    /// Returns null if not found.
+    /// </summary>
+    public Group? FindDescendantByUuid(Guid uuid)
+    {
+        if (Uuid == uuid)
+        {
+            return this;
+        }
+        foreach (Group sub in _groups)
+        {
+            Group? found = sub.FindDescendantByUuid(uuid);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+
     public bool IsAncestorOf(Group group)
     {
         Group? current = group.ParentGroup;

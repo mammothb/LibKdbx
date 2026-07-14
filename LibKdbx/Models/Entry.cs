@@ -65,7 +65,10 @@ public class Entry
 
     // ── History ───────────────────────────────────────────────────────────
 
-    public List<Entry> History { get; set; } = [];
+    internal readonly List<Entry> _history = [];
+
+    /// <summary>Entry history entries (old versions before modification).</summary>
+    public IReadOnlyList<Entry> History => _history;
 
     // ── CRUD ──────────────────────────────────────────────────────────────
 
@@ -96,7 +99,7 @@ public class Entry
     {
         Entry snapshot = DeepCopy();
         update(this);
-        History.Add(snapshot);
+        _history.Add(snapshot);
         TrimHistory();
         Database?.SetChanged();
     }
@@ -105,7 +108,7 @@ public class Entry
     {
         Entry clone = DeepCopy();
         clone.Uuid = Guid.NewGuid();
-        clone.History.Clear();
+        clone._history.Clear();
         return clone;
     }
 
@@ -194,18 +197,18 @@ public class Entry
         long maxSize = Database?.Metadata?.HistoryMaxSize ?? 6_291_456;
 
         // Trim by count
-        while (History.Count > maxItems)
+        while (_history.Count > maxItems)
         {
-            History.RemoveAt(0);
+            _history.RemoveAt(0);
         }
 
         // Trim by total size (approximate via attachment data size)
         while (
-            History.Count > 0
-            && History.Sum(h => h.Attributes.Keys.Count * 128 + h.Attachments.DataSize()) > maxSize
+            _history.Count > 0
+            && _history.Sum(h => h.Attributes.Keys.Count * 128 + h.Attachments.DataSize()) > maxSize
         )
         {
-            History.RemoveAt(0);
+            _history.RemoveAt(0);
         }
     }
 }

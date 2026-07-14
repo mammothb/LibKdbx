@@ -2,7 +2,7 @@ namespace LibKdbx;
 
 public class Database : IDisposable
 {
-    public FileInfo? FileInfo { get; private set; }
+    public FileInfo? DatabaseFile { get; private set; }
     public Metadata? Metadata { get; internal set; }
     public Group? RootGroup { get; internal set; }
     public Settings Settings { get; set; } = new();
@@ -22,8 +22,10 @@ public class Database : IDisposable
 
     private readonly Dictionary<Guid, Entry> _entryIndex = [];
 
+    internal readonly List<DeletedObject> _deletedObjects = [];
+
     /// <summary>Permanently deleted objects (UUID + deletion time).</summary>
-    public List<DeletedObject> DeletedObjects { get; } = [];
+    public IReadOnlyList<DeletedObject> DeletedObjects => _deletedObjects;
 
     // ── Constructors ──────────────────────────────────────────────────────
 
@@ -36,24 +38,24 @@ public class Database : IDisposable
 
     public Database(string path)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
     }
 
     public Database(string path, CompositeKey key)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
         _key = key;
     }
 
     public Database(string path, string password)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
         _key = new CompositeKey(password);
     }
 
     public Database(string path, string password, string keyFile)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
         _key = new CompositeKey(password, keyFile);
     }
 
@@ -98,34 +100,87 @@ public class Database : IDisposable
         return db;
     }
 
+    /// <summary>
+    /// Opens a database file asynchronously.
+    /// The <paramref name="ct"/> governs file read I/O only.
+    /// KDF derivation, decryption, and XML parsing run synchronously after
+    /// the file bytes are loaded into memory.
+    /// </summary>
+    public static async Task<Database> OpenAsync(
+        string path,
+        string password,
+        string? keyFile = null,
+        CancellationToken ct = default
+    )
+    {
+        Database db = keyFile is not null
+            ? new Database(path, password, keyFile)
+            : new Database(path, password);
+        await db.OpenAsync(ct);
+        return db;
+    }
+
     public void Open()
     {
-        if (FileInfo is null)
+        // Delegate to async — safe because File.ReadAllBytesAsync has no
+        // SynchronizationContext affinity on thread-pool / console callers.
+        OpenAsync(CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Opens the database file asynchronously.
+    /// The <paramref name="ct"/> governs file read I/O only.
+    /// </summary>
+    public async Task OpenAsync(CancellationToken ct = default)
+    {
+        if (DatabaseFile is null)
         {
             throw new InvalidOperationException("No file path set.");
         }
 
-        using Stream stream = FileInfo.OpenRead();
-        new KdbxReader(this).ReadFrom(stream);
+        byte[] bytes = await File.ReadAllBytesAsync(DatabaseFile.FullName, ct);
+        await using MemoryStream ms = new(bytes);
+        new KdbxReader(this).ReadFrom(ms);
         HasChanges = false;
     }
 
     public void Save()
     {
-        if (FileInfo is null)
+        SaveAsync(CancellationToken.None).GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    /// Saves the database to its file asynchronously.
+    /// The <paramref name="ct"/> governs file write I/O only.
+    /// XML serialization, encryption, and KDF derivation run synchronously
+    /// before the bytes are written.
+    /// </summary>
+    public async Task SaveAsync(CancellationToken ct = default)
+    {
+        if (DatabaseFile is null)
         {
             throw new InvalidOperationException("No file path set.");
         }
 
-        using Stream stream = FileInfo.Open(FileMode.Create);
-        new KdbxWriter(this).WriteTo(stream);
+        await using MemoryStream ms = new();
+        new KdbxWriter(this).WriteTo(ms);
+        await File.WriteAllBytesAsync(DatabaseFile.FullName, ms.ToArray(), ct);
         HasChanges = false;
     }
 
     public void SaveAs(string path)
     {
-        FileInfo = new FileInfo(path);
+        DatabaseFile = new FileInfo(path);
         Save();
+    }
+
+    /// <summary>
+    /// Changes the file path and saves asynchronously.
+    /// </summary>
+    public async Task SaveAsAsync(string path, CancellationToken ct = default)
+    {
+        DatabaseFile = new FileInfo(path);
+        await SaveAsync(ct);
     }
 
     // ── IDisposable ───────────────────────────────────────────────────────
@@ -213,7 +268,7 @@ public class Database : IDisposable
         {
             return null;
         }
-        return FindGroup(Metadata!.RecycleBinUuid, RootGroup);
+        return RootGroup?.FindDescendantByUuid(Metadata!.RecycleBinUuid);
     }
 
     internal Group GetOrCreateRecycleBin()
@@ -223,7 +278,7 @@ public class Database : IDisposable
             throw new InvalidOperationException("Database has no root group.");
         }
 
-        Group? bin = FindGroup(Metadata?.RecycleBinUuid ?? Guid.Empty, RootGroup);
+        Group? bin = RootGroup.FindDescendantByUuid(Metadata?.RecycleBinUuid ?? Guid.Empty);
         if (bin is not null)
         {
             return bin;
@@ -263,102 +318,6 @@ public class Database : IDisposable
 
     // ── Reference resolution ──────────────────────────────────────────────
 
-    internal string ResolveField(Entry entry, string fieldName, int maxDepth = 10)
-    {
-        string? value = entry.Attributes.Get(fieldName) ?? "";
-        return ResolveValue(value, maxDepth);
-    }
-
-    private string ResolveValue(string value, int depth)
-    {
-        if (depth <= 0 || !FieldReference.TryParse(value, out FieldReference refInfo))
-        {
-            return value;
-        }
-
-        Entry? target = FindReferencedEntry(refInfo);
-        if (target is null)
-        {
-            return value;
-        }
-
-        // WantedField 'I' returns the target entry's UUID as a hex string
-        if (refInfo.WantedField == 'I')
-        {
-            return target.Uuid.ToString("N");
-        }
-
-        string? fieldKey = FieldReference.FieldCodeToKey(refInfo.WantedField);
-        if (fieldKey is null)
-        {
-            return value;
-        }
-
-        if (!target.Attributes.TryGetValue(fieldKey, out string? resolved))
-        {
-            resolved = "";
-        }
-        return ResolveValue(resolved, depth - 1);
-    }
-
-    private Entry? FindReferencedEntry(FieldReference refInfo)
-    {
-        if (refInfo.SearchIn == 'I')
-        {
-            if (TryParseHexGuid(refInfo.SearchValue, out Guid uuid))
-            {
-                return _entryIndex.GetValueOrDefault(uuid);
-            }
-            return null;
-        }
-
-        if (refInfo.SearchIn == 'O')
-        {
-            return _entryIndex.Values.FirstOrDefault(e =>
-                e.Attributes.ContainsValue(refInfo.SearchValue)
-            );
-        }
-
-        string? fieldKey = FieldReference.FieldCodeToKey(refInfo.SearchIn);
-        if (fieldKey is null)
-        {
-            return null;
-        }
-
-        return _entryIndex.Values.FirstOrDefault(e =>
-            e.Attributes.Get(fieldKey) == refInfo.SearchValue
-        );
-    }
-
-    private static bool TryParseHexGuid(string hex, out Guid result)
-    {
-        result = Guid.Empty;
-        if (hex.Length != 32)
-        {
-            return false;
-        }
-        string formatted = $"{hex[..8]}-{hex[8..12]}-{hex[12..16]}-{hex[16..20]}-{hex[20..]}";
-        return Guid.TryParse(formatted, out result);
-    }
-
-    private static Group? FindGroup(Guid uuid, Group? root)
-    {
-        if (root is null)
-        {
-            return null;
-        }
-        if (root.Uuid == uuid)
-        {
-            return root;
-        }
-        foreach (Group sub in root.Groups)
-        {
-            Group? found = FindGroup(uuid, sub);
-            if (found is not null)
-            {
-                return found;
-            }
-        }
-        return null;
-    }
+    internal string ResolveField(Entry entry, string fieldName, int maxDepth = 10) =>
+        ReferenceResolver.ResolveField(_entryIndex, entry, fieldName, maxDepth);
 }
