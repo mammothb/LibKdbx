@@ -321,4 +321,193 @@ public class KdbxXmlWriterTests
         XElement delEl = doc.Root!.Element("Root")!.Element("DeletedObjects")!;
         delEl.Elements("DeletedObject").Count().ShouldBe(2);
     }
+
+    // ── CustomIcons ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void Metadata_CustomIcons_Basic()
+    {
+        (Database db, ProtectedStream ps, MemoryStream ms) = Setup();
+        db.Metadata!.CustomIcons.Add(
+            new CustomIcon { Uuid = Guid.NewGuid(), Data = [0x01, 0x02, 0x03] }
+        );
+
+        new KdbxXmlWriter(db, ps, isV4: true).WriteTo(ms);
+        XDocument doc = ParseXml(ms);
+
+        XElement iconsEl = doc.Root!.Element("Meta")!.Element("CustomIcons")!;
+        iconsEl.Elements("Icon").Count().ShouldBe(1);
+        XElement icon = iconsEl.Element("Icon")!;
+        icon.Element("UUID")!.ShouldNotBeNull();
+        icon.Element("Data")!.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void Metadata_CustomIcons_With_Name_And_Date()
+    {
+        (Database db, ProtectedStream ps, MemoryStream ms) = Setup();
+        DateTime modTime = new(2024, 3, 15, 0, 0, 0, DateTimeKind.Utc);
+        db.Metadata!.CustomIcons.Add(
+            new CustomIcon
+            {
+                Uuid = Guid.NewGuid(),
+                Data = [0xAA, 0xBB],
+                Name = "MyIcon",
+                LastModificationTime = modTime,
+            }
+        );
+
+        new KdbxXmlWriter(db, ps, isV4: true).WriteTo(ms);
+        XDocument doc = ParseXml(ms);
+
+        XElement icon = doc.Root!.Element("Meta")!.Element("CustomIcons")!.Element("Icon")!;
+        icon.Element("Name")!.Value.ShouldBe("MyIcon");
+        icon.Element("LastModificationTime")!.ShouldNotBeNull();
+    }
+
+    // ── Entry AutoType ──────────────────────────────────────────────────
+
+    [Fact]
+    public void Entry_AutoType()
+    {
+        (Database db, ProtectedStream ps, MemoryStream ms) = Setup();
+        Entry entry = new() { Title = "WithAuto" };
+        entry.AutoType.Enabled = false;
+        entry.AutoType.DataTransferObfuscation = 1;
+        entry.AutoType.DefaultSequence = "{USERNAME}{TAB}{PASSWORD}";
+        entry.AutoType.Associations.Add(
+            new AutoTypeAssociation { Window = "Firefox", Sequence = "{PASSWORD}{ENTER}" }
+        );
+        db.RootGroup!.AddEntry(entry);
+
+        new KdbxXmlWriter(db, ps, isV4: true).WriteTo(ms);
+        XDocument doc = ParseXml(ms);
+
+        XElement auto = doc.Root!.Element("Root")!
+            .Element("Group")!
+            .Element("Entry")!
+            .Element("AutoType")!;
+        auto.Element("Enabled")!.Value.ShouldBe("False");
+        auto.Element("DataTransferObfuscation")!.Value.ShouldBe("1");
+        auto.Element("DefaultSequence")!.Value.ShouldBe("{USERNAME}{TAB}{PASSWORD}");
+        auto.Element("Association")!.Element("Window")!.Value.ShouldBe("Firefox");
+    }
+
+    // ── Entry History ───────────────────────────────────────────────────
+
+    [Fact]
+    public void Entry_History()
+    {
+        (Database db, ProtectedStream ps, MemoryStream ms) = Setup();
+        Entry entry = new() { Title = "V2" };
+        entry.History.Add(new Entry { Title = "V1" });
+        entry.History.Add(new Entry { Title = "V0" });
+        db.RootGroup!.AddEntry(entry);
+
+        new KdbxXmlWriter(db, ps, isV4: true).WriteTo(ms);
+        XDocument doc = ParseXml(ms);
+
+        XElement historyEl = doc.Root!.Element("Root")!
+            .Element("Group")!
+            .Element("Entry")!
+            .Element("History")!;
+        historyEl.Elements("Entry").Count().ShouldBe(2);
+        historyEl
+            .Elements("Entry")
+            .First()
+            .Element("String")!
+            .Element("Key")!
+            .Value.ShouldBe("Title");
+    }
+
+    // ── Entry CustomIconUuid ────────────────────────────────────────────
+
+    [Fact]
+    public void Entry_CustomIconUuid_Written_When_NonEmpty()
+    {
+        (Database db, ProtectedStream ps, MemoryStream ms) = Setup();
+        Entry entry = new() { Title = "CustomIcon", CustomIconUuid = Guid.NewGuid() };
+        db.RootGroup!.AddEntry(entry);
+
+        new KdbxXmlWriter(db, ps, isV4: true).WriteTo(ms);
+        XDocument doc = ParseXml(ms);
+
+        doc.Root!.Element("Root")!
+            .Element("Group")!
+            .Element("Entry")!
+            .Element("CustomIconUUID")!
+            .ShouldNotBeNull();
+    }
+
+    // ── Group CustomIconUuid ────────────────────────────────────────────
+
+    [Fact]
+    public void Group_CustomIconUuid_Written_When_NonEmpty()
+    {
+        (Database db, ProtectedStream ps, MemoryStream ms) = Setup();
+        db.RootGroup!.CustomIconUuid = Guid.NewGuid();
+
+        new KdbxXmlWriter(db, ps, isV4: true).WriteTo(ms);
+        XDocument doc = ParseXml(ms);
+
+        doc.Root!.Element("Root")!.Element("Group")!.Element("CustomIconUUID")!.ShouldNotBeNull();
+    }
+
+    // ── V3 binary pool ──────────────────────────────────────────────────
+
+    [Fact]
+    public void Metadata_V3_BinaryPool()
+    {
+        (Database db, ProtectedStream ps, MemoryStream ms) = Setup(isV4: false);
+        Entry entry = new() { Title = "WithFile" };
+        entry.Attachments.Set("test.bin", [0x01, 0x02, 0x03]);
+        db.RootGroup!.AddEntry(entry);
+
+        new KdbxXmlWriter(db, ps, isV4: false).WriteTo(ms);
+        XDocument doc = ParseXml(ms);
+
+        XElement binariesEl = doc.Root!.Element("Meta")!.Element("Binaries")!;
+        binariesEl.Elements("Binary").Count().ShouldBe(1);
+        XElement bin = binariesEl.Element("Binary")!;
+        bin.Attribute("ID")!.Value.ShouldBe("0");
+        bin.Attribute("Compressed")!.Value.ShouldBe("True");
+    }
+
+    // ── WriteTo null guards ─────────────────────────────────────────────
+
+    [Fact]
+    public void WriteTo_Null_Metadata_Throws()
+    {
+        Database db = new()
+        {
+            Settings = new Settings(),
+            RootGroup = new Group { Name = "Root" },
+            Key = new CompositeKey("test"),
+        };
+        byte[] psKey = RandomNumberGenerator.GetBytes(64);
+        ProtectedStream ps = new(ProtectedStreamAlgorithm.ChaCha20, psKey);
+        using MemoryStream ms = new();
+
+        Should.Throw<InvalidOperationException>(() =>
+            new KdbxXmlWriter(db, ps, isV4: true).WriteTo(ms)
+        );
+    }
+
+    [Fact]
+    public void WriteTo_Null_RootGroup_Throws()
+    {
+        Database db = new()
+        {
+            Settings = new Settings(),
+            Metadata = new Metadata(),
+            Key = new CompositeKey("test"),
+        };
+        byte[] psKey = RandomNumberGenerator.GetBytes(64);
+        ProtectedStream ps = new(ProtectedStreamAlgorithm.ChaCha20, psKey);
+        using MemoryStream ms = new();
+
+        Should.Throw<InvalidOperationException>(() =>
+            new KdbxXmlWriter(db, ps, isV4: true).WriteTo(ms)
+        );
+    }
 }
