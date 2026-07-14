@@ -268,7 +268,7 @@ public class Database : IDisposable
         {
             return null;
         }
-        return FindGroup(Metadata!.RecycleBinUuid, RootGroup);
+        return RootGroup?.FindDescendantByUuid(Metadata!.RecycleBinUuid);
     }
 
     internal Group GetOrCreateRecycleBin()
@@ -278,7 +278,7 @@ public class Database : IDisposable
             throw new InvalidOperationException("Database has no root group.");
         }
 
-        Group? bin = FindGroup(Metadata?.RecycleBinUuid ?? Guid.Empty, RootGroup);
+        Group? bin = RootGroup.FindDescendantByUuid(Metadata?.RecycleBinUuid ?? Guid.Empty);
         if (bin is not null)
         {
             return bin;
@@ -318,91 +318,6 @@ public class Database : IDisposable
 
     // ── Reference resolution ──────────────────────────────────────────────
 
-    internal string ResolveField(Entry entry, string fieldName, int maxDepth = 10)
-    {
-        string? value = entry.Attributes.Get(fieldName) ?? "";
-        return ResolveValue(value, maxDepth);
-    }
-
-    private string ResolveValue(string value, int depth)
-    {
-        if (depth <= 0 || !FieldReference.TryParse(value, out FieldReference refInfo))
-        {
-            return value;
-        }
-
-        Entry? target = FindReferencedEntry(refInfo);
-        if (target is null)
-        {
-            return value;
-        }
-
-        // WantedField 'I' returns the target entry's UUID as a hex string
-        if (refInfo.WantedField == 'I')
-        {
-            return target.Uuid.ToString("N");
-        }
-
-        string? fieldKey = FieldReference.FieldCodeToKey(refInfo.WantedField);
-        if (fieldKey is null)
-        {
-            return value;
-        }
-
-        if (!target.Attributes.TryGetValue(fieldKey, out string? resolved))
-        {
-            resolved = "";
-        }
-        return ResolveValue(resolved, depth - 1);
-    }
-
-    private Entry? FindReferencedEntry(FieldReference refInfo)
-    {
-        if (refInfo.SearchIn == 'I')
-        {
-            if (GuidRfc4122.TryParseHex(refInfo.SearchValue, out Guid uuid))
-            {
-                return _entryIndex.GetValueOrDefault(uuid);
-            }
-            return null;
-        }
-
-        if (refInfo.SearchIn == 'O')
-        {
-            return _entryIndex.Values.FirstOrDefault(e =>
-                e.Attributes.ContainsValue(refInfo.SearchValue)
-            );
-        }
-
-        string? fieldKey = FieldReference.FieldCodeToKey(refInfo.SearchIn);
-        if (fieldKey is null)
-        {
-            return null;
-        }
-
-        return _entryIndex.Values.FirstOrDefault(e =>
-            e.Attributes.Get(fieldKey) == refInfo.SearchValue
-        );
-    }
-
-    private static Group? FindGroup(Guid uuid, Group? root)
-    {
-        if (root is null)
-        {
-            return null;
-        }
-        if (root.Uuid == uuid)
-        {
-            return root;
-        }
-        foreach (Group sub in root.Groups)
-        {
-            Group? found = FindGroup(uuid, sub);
-            if (found is not null)
-            {
-                return found;
-            }
-        }
-        return null;
-    }
+    internal string ResolveField(Entry entry, string fieldName, int maxDepth = 10) =>
+        ReferenceResolver.ResolveField(_entryIndex, entry, fieldName, maxDepth);
 }

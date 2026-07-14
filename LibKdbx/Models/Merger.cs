@@ -68,7 +68,7 @@ public static class Merger
         List<Group> sourceChildren = [.. sourceGroup.Groups];
         foreach (Group sourceChild in sourceChildren)
         {
-            Group? targetChild = FindGroupByUuid(sourceChild.Uuid, targetGroup);
+            Group? targetChild = targetGroup.FindDescendantByUuid(sourceChild.Uuid);
 
             if (targetChild is null)
             {
@@ -402,26 +402,6 @@ public static class Merger
         }
 
         return root.FindEntry(e => e.Uuid == uuid);
-    }
-
-    private static Group? FindGroupByUuid(Guid uuid, Group root)
-    {
-        Group? found = null;
-        Queue<Group> queue = new([root]);
-        while (queue.Count > 0)
-        {
-            Group g = queue.Dequeue();
-            if (g.Uuid == uuid)
-            {
-                found = g;
-                break;
-            }
-            foreach (Group child in g.Groups)
-            {
-                queue.Enqueue(child);
-            }
-        }
-        return found;
     }
 
     private static Entry CloneEntry(Entry source)
