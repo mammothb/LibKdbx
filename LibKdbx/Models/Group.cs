@@ -332,6 +332,39 @@ public class Group
         return true; // default
     }
 
+    // ── Sort ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Sorts subgroups alphabetically (case-insensitive), then recurses into each.
+    /// The recycle bin (if present) is always placed last.
+    /// Does not sort entries.
+    /// </summary>
+    public void SortChildrenRecursively(bool reverse = false)
+    {
+        Group? recycleBin = Database?.GetRecycleBin();
+
+        _groups.Sort(
+            (a, b) =>
+            {
+                if (a == recycleBin)
+                {
+                    return 1;
+                }
+                if (b == recycleBin)
+                {
+                    return -1;
+                }
+                int cmp = string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+                return reverse ? -cmp : cmp;
+            }
+        );
+
+        foreach (Group child in _groups)
+        {
+            child.SortChildrenRecursively(reverse);
+        }
+    }
+
     // ── Internal ──────────────────────────────────────────────────────────
 
     internal void SetDatabaseRecursive(Database? db)
