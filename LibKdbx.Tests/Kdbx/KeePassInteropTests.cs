@@ -75,4 +75,39 @@ public class KeePassInteropTests
         using Database db = Database.Open(path, "test");
         db.DeletedObjects.Count.ShouldBeGreaterThan(0);
     }
+
+    // ── Cipher / KDF interop ────────────────────────────────────────────
+
+    [Fact]
+    public void Open_KeePass_ChaCha20_Argon2id_V4()
+    {
+        if (Missing("chacha20_argon2id_v4.kdbx", out string path))
+        {
+            return;
+        }
+        using Database db = Database.Open(path, "test");
+        db.RootGroup!.Entries.Count.ShouldBeGreaterThanOrEqualTo(1);
+    }
+
+    [Fact]
+    public void Open_KeePass_ChaCha20_Argon2d_V4()
+    {
+        if (Missing("chacha20_argon2d_v4.kdbx", out string path))
+        {
+            return;
+        }
+        using Database db = Database.Open(path, "test");
+        db.RootGroup!.Entries.Count.ShouldBeGreaterThanOrEqualTo(1);
+    }
+
+    [Fact]
+    public void Open_KeePass_Aes256_Argon2id_V4()
+    {
+        if (Missing("aes256_argon2id_v4.kdbx", out string path))
+        {
+            return;
+        }
+        using Database db = Database.Open(path, "test");
+        db.RootGroup!.Entries.Count.ShouldBeGreaterThanOrEqualTo(1);
+    }
 }

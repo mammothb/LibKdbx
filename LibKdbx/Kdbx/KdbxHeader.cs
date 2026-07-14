@@ -222,7 +222,11 @@ public class KdbxHeader : IHeader
 
         Guid kdfId = GuidRfc4122.FromBytes((byte[])uuidBytes!);
 
-        if (kdfId == Argon2Kdf.Argon2dUuid || kdfId == Argon2Kdf.Argon2idUuid)
+        if (
+            kdfId == Argon2Kdf.Argon2dUuid
+            || kdfId == Argon2Kdf.Argon2idUuid
+            || kdfId == Argon2Kdf.KeePassArgon2idUuid
+        )
         {
             byte[] salt = (byte[])KdfParameters["S"];
             int parallelism = (int)(uint)KdfParameters["P"];

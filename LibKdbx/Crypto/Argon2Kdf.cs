@@ -22,6 +22,7 @@ public class Argon2Kdf(
 {
     public static readonly Guid Argon2dUuid = new("ef636ddf-8c29-444b-91f7-a9a403e30a0c");
     public static readonly Guid Argon2idUuid = new("9e298b19-6db4-4830-bda5-57f0f7ca20c7");
+    public static readonly Guid KeePassArgon2idUuid = new("9e298b19-56db-4773-b23d-fc3ec6f0a1e6");
 
     public byte[] Salt { get; } = salt;
     public int Parallelism { get; } = parallelism;
