@@ -56,7 +56,7 @@ public class KdbxReader(Database db)
         }
 
         var ps = new ProtectedStream(header.InnerRandomStreamId, header.ProtectedStreamKey!);
-        _db.Settings = Settings.FromHeader(header, header.InnerRandomStreamId);
+        _db.Settings = header.CreateSettings(header.InnerRandomStreamId);
 
         using var xmlStream = new MemoryStream(plaintext);
         new KdbxXmlReader(_db, ps, isV4: false).ReadFrom(xmlStream);
@@ -106,7 +106,7 @@ public class KdbxReader(Database db)
             ReadInnerHeader(innerReader);
 
         var ps = new ProtectedStream(algo, innerKey);
-        _db.Settings = Settings.FromHeader(header, algo);
+        _db.Settings = header.CreateSettings(algo);
 
         new KdbxXmlReader(_db, ps, isV4: true, binaries).ReadFrom(plainStream);
     }

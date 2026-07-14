@@ -1,6 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace LibKdbx;
 
 /// <summary>
@@ -13,7 +10,7 @@ public class Settings
     public bool IsCompressed { get; set; } = true;
     public ProtectedStreamAlgorithm InnerStreamAlgorithm { get; set; } =
         ProtectedStreamAlgorithm.ChaCha20;
-    public IKdf Kdf { get; set; } = DefaultArgon2id();
+    public IKdf Kdf { get; set; } = Argon2Kdf.CreateDefault();
 
     // ── Database-level identities (KDBX 4.x public custom data) ──────────
 
@@ -31,144 +28,4 @@ public class Settings
 
     /// <summary>Icon index for this database.</summary>
     public int PublicIcon { get; set; }
-
-    // ── Internal helpers ──────────────────────────────────────────────────
-
-    internal static Settings FromHeader(IHeader header, ProtectedStreamAlgorithm innerAlgo)
-    {
-        var settings = new Settings
-        {
-            Format = header.IsVersion4 ? KdbxFormat.Kdbx4 : KdbxFormat.Kdbx3,
-            Cipher = SymmetricCipher.FromUuid(header.CipherId),
-            IsCompressed = header.IsCompressed,
-            InnerStreamAlgorithm = innerAlgo,
-            Kdf = header.CreateKdf(),
-        };
-
-        // Parse public custom data from header if present (KDBX 4.x only)
-        if (header is KdbxHeader kh && kh.PublicCustomData is { Length: > 0 } data)
-        {
-            ParsePublicCustomData(Encoding.UTF8.GetString(data), settings);
-        }
-
-        return settings;
-    }
-
-    /// <summary>
-    /// Validates the settings and builds a fresh <see cref="KdbxHeader"/>
-    /// (new random MasterSeed, IV, etc.).
-    /// </summary>
-    internal KdbxHeader ToHeader()
-    {
-        KdbxHeader header;
-
-        if (Format == KdbxFormat.Kdbx4)
-        {
-            header = KdbxHeader.CreateNewV4(Cipher, Kdf, IsCompressed);
-
-            // Serialize public custom data
-            string pubData = BuildPublicCustomData();
-            if (pubData.Length > 0)
-            {
-                header.PublicCustomData = Encoding.UTF8.GetBytes(pubData);
-            }
-        }
-        else
-        {
-            if (Kdf is not AesKdf aesKdf)
-            {
-                throw new InvalidOperationException(
-                    "KDBX 3.x only supports AES-KDF. Set Kdf to an AesKdf instance."
-                );
-            }
-
-            header = KdbxHeader.CreateNewV3(
-                Cipher,
-                InnerStreamAlgorithm,
-                aesKdf.Rounds,
-                IsCompressed
-            );
-        }
-
-        return header;
-    }
-
-    internal static Argon2Kdf DefaultArgon2id() =>
-        new(
-            salt: RandomNumberGenerator.GetBytes(32),
-            parallelism: 2,
-            memoryKib: 64 * 1024,
-            iterations: 2,
-            type: Argon2Type.Id
-        );
-
-    // ── Public custom data serialization ──────────────────────────────────
-
-    private string BuildPublicCustomData()
-    {
-        var sb = new StringBuilder();
-
-        void Append(string key, string value)
-        {
-            if (!string.IsNullOrEmpty(value))
-            {
-                sb.Append(key).Append(": ").Append(value).Append('\n');
-            }
-        }
-
-        if (PublicUuid != Guid.Empty)
-        {
-            Append("PublicUUID", PublicUuid.ToString("D"));
-        }
-        if (!string.IsNullOrEmpty(PublicName))
-        {
-            Append("Name", PublicName);
-        }
-        if (!string.IsNullOrEmpty(PublicColor))
-        {
-            Append("Color", PublicColor);
-        }
-        if (PublicIcon != 0)
-        {
-            Append("Icon", PublicIcon.ToString());
-        }
-
-        return sb.ToString();
-    }
-
-    private static void ParsePublicCustomData(string data, Settings settings)
-    {
-        foreach (string line in data.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-        {
-            int colon = line.IndexOf(':');
-            if (colon < 0)
-            {
-                continue;
-            }
-            string key = line[..colon].Trim();
-            string value = line[(colon + 1)..].Trim();
-
-            switch (key)
-            {
-                case "PublicUUID":
-                    if (Guid.TryParse(value, out Guid uuid))
-                    {
-                        settings.PublicUuid = uuid;
-                    }
-                    break;
-                case "Name":
-                    settings.PublicName = value;
-                    break;
-                case "Color":
-                    settings.PublicColor = value;
-                    break;
-                case "Icon":
-                    if (int.TryParse(value, out int icon))
-                    {
-                        settings.PublicIcon = icon;
-                    }
-                    break;
-            }
-        }
-    }
 }

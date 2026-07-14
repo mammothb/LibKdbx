@@ -24,6 +24,19 @@ public class Argon2Kdf(
     public static readonly Guid Argon2idUuid = new("9e298b19-6db4-4830-bda5-57f0f7ca20c7");
     public static readonly Guid KeePassArgon2idUuid = new("9e298b19-56db-4773-b23d-fc3ec6f0a1e6");
 
+    /// <summary>
+    /// Creates a default Argon2id KDF with recommended parameters
+    /// (32-byte random salt, 2 iterations, 64 MiB memory, 2-way parallelism).
+    /// </summary>
+    public static Argon2Kdf CreateDefault() =>
+        new(
+            salt: System.Security.Cryptography.RandomNumberGenerator.GetBytes(32),
+            parallelism: 2,
+            memoryKib: 64 * 1024,
+            iterations: 2,
+            type: Argon2Type.Id
+        );
+
     public byte[] Salt { get; } = salt;
     public int Parallelism { get; } = parallelism;
     public int MemoryKib { get; } = memoryKib;

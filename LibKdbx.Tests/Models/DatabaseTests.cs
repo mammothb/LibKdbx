@@ -161,7 +161,7 @@ public class DatabaseTests
         Settings settings = new() { PublicName = "MyDB", PublicColor = "#FF0000" };
         using Database db = Database.Create("pw", settings);
 
-        KdbxHeader header = settings.ToHeader();
+        KdbxHeader header = KdbxHeader.FromSettings(settings);
         header.PublicCustomData.ShouldNotBeNull();
         System.Text.Encoding.UTF8.GetString(header.PublicCustomData).ShouldContain("Name: MyDB");
     }
@@ -197,7 +197,7 @@ public class DatabaseTests
         };
         using Database db = Database.Create("pw", settings);
 
-        KdbxHeader header = settings.ToHeader();
+        KdbxHeader header = KdbxHeader.FromSettings(settings);
         header.IsVersion4.ShouldBeFalse();
     }
 
