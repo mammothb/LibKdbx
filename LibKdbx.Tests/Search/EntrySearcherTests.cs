@@ -136,53 +136,37 @@ public class EntrySearcherTests
 
     // ── Broad search (Undefined field) ───────────────────────────────────────
 
+    [Theory]
+    [InlineData("alice")] // matches username
+    [InlineData("example.com")] // matches url
+    [InlineData("some notes")] // matches notes
+    public void Undefined_Matches_Defaults(string query)
+    {
+        (Group root, _) = CreateDbWithEntry();
+        List<Entry> results = CreateSearcher().Search(query, root);
+        results.Count.ShouldBe(1);
+    }
+
     [Fact]
-    public void Undefined_Matches_Title()
+    public void Undefined_Matches_Custom_Title()
     {
         (Group root, _) = CreateDbWithEntry("MySecretApp");
         List<Entry> results = CreateSearcher().Search("MySecret", root);
         results.Count.ShouldBe(1);
     }
 
-    [Fact]
-    public void Undefined_Matches_Username()
-    {
-        (Group root, _) = CreateDbWithEntry();
-        List<Entry> results = CreateSearcher().Search("alice", root);
-        results.Count.ShouldBe(1);
-    }
+    // ── Field-specific ──────────────────────────────────────────────────────
 
-    [Fact]
-    public void Undefined_Matches_Url()
+    [Theory]
+    [InlineData("username:alice")]
+    [InlineData("password:secret123")]
+    [InlineData("pw:hunter2", "TestEntry", "hunter2")]
+    [InlineData("url:https://example.com")]
+    [InlineData("notes:some")]
+    public void Field_Match(string query, string? title = null, string? password = null)
     {
-        (Group root, _) = CreateDbWithEntry();
-        List<Entry> results = CreateSearcher().Search("example.com", root);
-        results.Count.ShouldBe(1);
-    }
-
-    [Fact]
-    public void Undefined_Matches_Notes()
-    {
-        (Group root, _) = CreateDbWithEntry();
-        List<Entry> results = CreateSearcher().Search("some notes", root);
-        results.Count.ShouldBe(1);
-    }
-
-    // ── Username / Password / Url / Notes ────────────────────────────────────
-
-    [Fact]
-    public void Username_Match()
-    {
-        (Group root, _) = CreateDbWithEntry();
-        List<Entry> results = CreateSearcher().Search("username:alice", root);
-        results.Count.ShouldBe(1);
-    }
-
-    [Fact]
-    public void Password_Match()
-    {
-        (Group root, _) = CreateDbWithEntry();
-        List<Entry> results = CreateSearcher().Search("password:secret123", root);
+        (Group root, _) = CreateDbWithEntry(title ?? "TestEntry", password);
+        List<Entry> results = CreateSearcher().Search(query, root);
         results.Count.ShouldBe(1);
     }
 
@@ -204,22 +188,6 @@ public class EntrySearcherTests
         entry.Attributes.Set("Password", "mysecret", protect: true);
 
         List<Entry> results = CreateSearcher().Search("password:mysecret", root);
-        results.Count.ShouldBe(1);
-    }
-
-    [Fact]
-    public void Url_Match()
-    {
-        (Group root, _) = CreateDbWithEntry();
-        List<Entry> results = CreateSearcher().Search("url:https://example.com", root);
-        results.Count.ShouldBe(1);
-    }
-
-    [Fact]
-    public void Notes_Match()
-    {
-        (Group root, _) = CreateDbWithEntry();
-        List<Entry> results = CreateSearcher().Search("notes:some", root);
         results.Count.ShouldBe(1);
     }
 
@@ -661,15 +629,6 @@ public class EntrySearcherTests
         List<SearchTerm> terms = CreateSearcher().ParseSearchTerms("alpha");
         terms.Count.ShouldBe(1);
         terms[0].Field.ShouldBe(SearchField.Undefined);
-    }
-
-    [Fact]
-    public void Pw_Shortcut()
-    {
-        (Group root, _) = CreateDbWithEntry(password: "hunter2");
-
-        List<Entry> results = CreateSearcher().Search("pw:hunter2", root);
-        results.Count.ShouldBe(1);
     }
 
     [Fact]

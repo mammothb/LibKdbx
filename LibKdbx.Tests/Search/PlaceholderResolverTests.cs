@@ -22,25 +22,15 @@ public class PlaceholderResolverTests
 
     // ── Basic placeholders ───────────────────────────────────────────────────
 
-    [Fact]
-    public void Title()
+    [Theory]
+    [InlineData("{TITLE}", "MyEntry")]
+    [InlineData("{USERNAME}", "alice")]
+    [InlineData("{PASSWORD}", "secret123")]
+    [InlineData("{NOTES}", "some notes")]
+    public void Basic_Placeholder(string input, string expected)
     {
         Entry entry = CreateEntry();
-        Resolve(entry, "{TITLE}").ShouldBe("MyEntry");
-    }
-
-    [Fact]
-    public void Username()
-    {
-        Entry entry = CreateEntry();
-        Resolve(entry, "{USERNAME}").ShouldBe("alice");
-    }
-
-    [Fact]
-    public void Password()
-    {
-        Entry entry = CreateEntry();
-        Resolve(entry, "{PASSWORD}").ShouldBe("secret123");
+        Resolve(entry, input).ShouldBe(expected);
     }
 
     [Fact]
@@ -48,13 +38,6 @@ public class PlaceholderResolverTests
     {
         Entry entry = CreateEntry();
         Resolve(entry, "{URL}").ShouldBe("https://example.com:8080/path?q=1#sec");
-    }
-
-    [Fact]
-    public void Notes()
-    {
-        Entry entry = CreateEntry();
-        Resolve(entry, "{NOTES}").ShouldBe("some notes");
     }
 
     [Fact]
@@ -426,103 +409,45 @@ public class PlaceholderResolverTests
 
     // ── Classify ─────────────────────────────────────────────────────────────
 
-    [Fact]
-    public void Classify_Title()
+    [Theory]
+    [InlineData("{TITLE}", PlaceholderType.Title)]
+    [InlineData("{USERNAME}", PlaceholderType.UserName)]
+    [InlineData("{PASSWORD}", PlaceholderType.Password)]
+    [InlineData("{URL}", PlaceholderType.Url)]
+    [InlineData("{NOTES}", PlaceholderType.Notes)]
+    [InlineData("{UUID}", PlaceholderType.Uuid)]
+    [InlineData("{TOTP}", PlaceholderType.Totp)]
+    [InlineData("{TIMEOTP}", PlaceholderType.Totp)]
+    [InlineData("{DB_DIR}", PlaceholderType.DbDir)]
+    [InlineData("{S:attr}", PlaceholderType.CustomAttribute)]
+    [InlineData("{REF:T@I:abc123}", PlaceholderType.Reference)]
+    [InlineData("{URL:HOST}", PlaceholderType.UrlHost)]
+    [InlineData("{URL:PORT}", PlaceholderType.UrlPort)]
+    [InlineData("{URL:PATH}", PlaceholderType.UrlPath)]
+    [InlineData("{URL:QUERY}", PlaceholderType.UrlQuery)]
+    [InlineData("{URL:FRAGMENT}", PlaceholderType.UrlFragment)]
+    [InlineData("{URL:SCM}", PlaceholderType.UrlScheme)]
+    [InlineData("{URL:SCHEME}", PlaceholderType.UrlScheme)]
+    [InlineData("{URL:USERINFO}", PlaceholderType.UrlUserInfo)]
+    [InlineData("{URL:USERNAME}", PlaceholderType.UrlUserName)]
+    [InlineData("{URL:PASSWORD}", PlaceholderType.UrlPassword)]
+    [InlineData("{DT_SIMPLE}", PlaceholderType.DateTimeSimple)]
+    [InlineData("{DT_YEAR}", PlaceholderType.DateTimeYear)]
+    [InlineData("{DT_UTC_SIMPLE}", PlaceholderType.DateTimeUtcSimple)]
+    [InlineData("{NOT_A_REAL_PLACEHOLDER}", PlaceholderType.Unknown)]
+    [InlineData("plain text", PlaceholderType.NotPlaceholder)]
+    public void Classify(string input, PlaceholderType expected)
     {
-        PlaceholderResolver.Classify("{TITLE}").ShouldBe(PlaceholderType.Title);
+        PlaceholderResolver.Classify(input).ShouldBe(expected);
     }
 
     [Fact]
-    public void Classify_Username()
-    {
-        PlaceholderResolver.Classify("{USERNAME}").ShouldBe(PlaceholderType.UserName);
-    }
-
-    [Fact]
-    public void Classify_Password()
-    {
-        PlaceholderResolver.Classify("{PASSWORD}").ShouldBe(PlaceholderType.Password);
-    }
-
-    [Fact]
-    public void Classify_Url()
-    {
-        PlaceholderResolver.Classify("{URL}").ShouldBe(PlaceholderType.Url);
-    }
-
-    [Fact]
-    public void Classify_Notes()
-    {
-        PlaceholderResolver.Classify("{NOTES}").ShouldBe(PlaceholderType.Notes);
-    }
-
-    [Fact]
-    public void Classify_Uuid()
-    {
-        PlaceholderResolver.Classify("{UUID}").ShouldBe(PlaceholderType.Uuid);
-    }
-
-    [Fact]
-    public void Classify_Totp()
-    {
-        PlaceholderResolver.Classify("{TOTP}").ShouldBe(PlaceholderType.Totp);
-    }
-
-    [Fact]
-    public void Classify_DbDir()
-    {
-        PlaceholderResolver.Classify("{DB_DIR}").ShouldBe(PlaceholderType.DbDir);
-    }
-
-    [Fact]
-    public void Classify_CustomAttribute()
-    {
-        PlaceholderResolver.Classify("{S:attr}").ShouldBe(PlaceholderType.CustomAttribute);
-    }
-
-    [Fact]
-    public void Classify_Reference()
-    {
-        PlaceholderResolver.Classify("{REF:T@I:abc123}").ShouldBe(PlaceholderType.Reference);
-    }
-
-    [Fact]
-    public void Classify_UrlHost()
-    {
-        PlaceholderResolver.Classify("{URL:HOST}").ShouldBe(PlaceholderType.UrlHost);
-    }
-
-    [Fact]
-    public void Classify_UrlPort()
-    {
-        PlaceholderResolver.Classify("{URL:PORT}").ShouldBe(PlaceholderType.UrlPort);
-    }
-
-    [Fact]
-    public void Classify_UrlWithoutScheme()
+    public void Classify_UrlWithoutScheme_Both_Aliases()
     {
         PlaceholderResolver.Classify("{URL:RMVSCM}").ShouldBe(PlaceholderType.UrlWithoutScheme);
         PlaceholderResolver
             .Classify("{URL:WITHOUTSCHEME}")
             .ShouldBe(PlaceholderType.UrlWithoutScheme);
-    }
-
-    [Fact]
-    public void Classify_DateTimeSimple()
-    {
-        PlaceholderResolver.Classify("{DT_SIMPLE}").ShouldBe(PlaceholderType.DateTimeSimple);
-    }
-
-    [Fact]
-    public void Classify_Unknown()
-    {
-        PlaceholderResolver.Classify("{NOT_A_REAL_PLACEHOLDER}").ShouldBe(PlaceholderType.Unknown);
-    }
-
-    [Fact]
-    public void Classify_NotPlaceholder()
-    {
-        PlaceholderResolver.Classify("plain text").ShouldBe(PlaceholderType.NotPlaceholder);
     }
 
     [Fact]

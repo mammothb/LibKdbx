@@ -131,101 +131,23 @@ public class RegexHelperTests
 
     // ── EscapeRegex ─────────────────────────────────────────────────────────
 
-    [Fact]
-    public void EscapeRegex_Alphanumeric_Unchanged()
+    [Theory]
+    [InlineData("helloWORLD123", "helloWORLD123")]
+    [InlineData("file.txt", @"file\.txt")]
+    [InlineData("a*b", @"a\*b")]
+    [InlineData("a?b", @"a\?b")]
+    [InlineData("a|b", @"a\|b")]
+    [InlineData("[test]", @"\[test\]")]
+    [InlineData("(group)", @"\(group\)")]
+    [InlineData(@"a\b", @"a\\b")]
+    [InlineData("^start$", @"\^start\$")]
+    [InlineData("a+b", @"a\+b")]
+    [InlineData("my_var_name", "my_var_name")]
+    [InlineData("my-var", @"my\-var")]
+    [InlineData("hello world", @"hello\ world")]
+    [InlineData("", "")]
+    public void EscapeRegex(string input, string expected)
     {
-        string result = RegexHelper.EscapeRegex("helloWORLD123");
-        result.ShouldBe("helloWORLD123");
-    }
-
-    [Fact]
-    public void EscapeRegex_Dot_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex("file.txt");
-        result.ShouldBe(@"file\.txt");
-    }
-
-    [Fact]
-    public void EscapeRegex_Star_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex("a*b");
-        result.ShouldBe(@"a\*b");
-    }
-
-    [Fact]
-    public void EscapeRegex_Question_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex("a?b");
-        result.ShouldBe(@"a\?b");
-    }
-
-    [Fact]
-    public void EscapeRegex_Pipe_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex("a|b");
-        result.ShouldBe(@"a\|b");
-    }
-
-    [Fact]
-    public void EscapeRegex_Brackets_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex("[test]");
-        result.ShouldBe(@"\[test\]");
-    }
-
-    [Fact]
-    public void EscapeRegex_Parentheses_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex("(group)");
-        result.ShouldBe(@"\(group\)");
-    }
-
-    [Fact]
-    public void EscapeRegex_Backslash_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex(@"a\b");
-        result.ShouldBe(@"a\\b");
-    }
-
-    [Fact]
-    public void EscapeRegex_Dollar_Caret_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex("^start$");
-        result.ShouldBe(@"\^start\$");
-    }
-
-    [Fact]
-    public void EscapeRegex_Plus_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex("a+b");
-        result.ShouldBe(@"a\+b");
-    }
-
-    [Fact]
-    public void EscapeRegex_Underscore_Preserved()
-    {
-        string result = RegexHelper.EscapeRegex("my_var_name");
-        result.ShouldBe("my_var_name");
-    }
-
-    [Fact]
-    public void EscapeRegex_Hyphen_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex("my-var");
-        result.ShouldBe(@"my\-var");
-    }
-
-    [Fact]
-    public void EscapeRegex_Space_Escaped()
-    {
-        string result = RegexHelper.EscapeRegex("hello world");
-        result.ShouldBe(@"hello\ world");
-    }
-
-    [Fact]
-    public void EscapeRegex_Empty_String()
-    {
-        string result = RegexHelper.EscapeRegex("");
-        result.ShouldBe("");
+        RegexHelper.EscapeRegex(input).ShouldBe(expected);
     }
 }
