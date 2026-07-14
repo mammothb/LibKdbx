@@ -358,7 +358,7 @@ public class Database : IDisposable
     {
         if (refInfo.SearchIn == 'I')
         {
-            if (TryParseHexGuid(refInfo.SearchValue, out Guid uuid))
+            if (GuidRfc4122.TryParseHex(refInfo.SearchValue, out Guid uuid))
             {
                 return _entryIndex.GetValueOrDefault(uuid);
             }
@@ -381,17 +381,6 @@ public class Database : IDisposable
         return _entryIndex.Values.FirstOrDefault(e =>
             e.Attributes.Get(fieldKey) == refInfo.SearchValue
         );
-    }
-
-    private static bool TryParseHexGuid(string hex, out Guid result)
-    {
-        result = Guid.Empty;
-        if (hex.Length != 32)
-        {
-            return false;
-        }
-        string formatted = $"{hex[..8]}-{hex[8..12]}-{hex[12..16]}-{hex[16..20]}-{hex[20..]}";
-        return Guid.TryParse(formatted, out result);
     }
 
     private static Group? FindGroup(Guid uuid, Group? root)

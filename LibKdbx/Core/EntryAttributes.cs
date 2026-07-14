@@ -217,7 +217,7 @@ public partial class EntryAttributes
         }
 
         string hex = match.Groups["SearchText"].Value;
-        return TryParseHexGuid(hex, out Guid guid) ? guid : Guid.Empty;
+        return GuidRfc4122.TryParseHex(hex, out Guid guid) ? guid : Guid.Empty;
     }
 
     // ── Passkey ─────────────────────────────────────────────────────────────
@@ -396,15 +396,4 @@ public partial class EntryAttributes
         RegexOptions.IgnoreCase
     )]
     private static partial Regex RefRegex();
-
-    private static bool TryParseHexGuid(string hex, out Guid result)
-    {
-        result = Guid.Empty;
-        if (hex.Length != 32)
-        {
-            return false;
-        }
-        string formatted = $"{hex[..8]}-{hex[8..12]}-{hex[12..16]}-{hex[16..20]}-{hex[20..]}";
-        return Guid.TryParse(formatted, out result);
-    }
 }

@@ -6,7 +6,7 @@ namespace LibKdbx;
 /// Recursive resolution with depth limit of 10. Ported from KeePassXC's
 /// <c>Entry::resolveMultiplePlaceholders</c>.
 /// </summary>
-public static partial class PlaceholderResolver
+public static class PlaceholderResolver
 {
     private const int MaxDepth = 10;
 
@@ -119,12 +119,10 @@ public static partial class PlaceholderResolver
                 return ResolveRecursive(entry, token, depth);
 
             case PlaceholderType.Unknown:
-            {
                 // Unknown placeholder: resolve inner content, wrap back in braces
                 string inner = token[1..^1]; // strip { and }
                 string resolved = ResolveRecursive(entry, inner, depth);
                 return "{" + resolved + "}";
-            }
 
             case PlaceholderType.Title:
                 return ResolveRecursive(entry, entry.Title, depth);
@@ -145,17 +143,14 @@ public static partial class PlaceholderResolver
                 return entry.Uuid.ToString("N");
 
             case PlaceholderType.DbDir:
-            {
                 string? filePath = entry.Database?.FileInfo?.FullName;
                 if (filePath is null)
                 {
                     return "";
                 }
                 return Path.GetDirectoryName(filePath) ?? "";
-            }
 
             case PlaceholderType.CustomAttribute:
-            {
                 // {S:attrkey}
                 string key = token[3..^1]; // strip {S: and }
                 string? value = entry.Attributes.Get(key);
@@ -164,10 +159,8 @@ public static partial class PlaceholderResolver
                     return "";
                 }
                 return ResolveRecursive(entry, value, depth);
-            }
 
             case PlaceholderType.Reference:
-            {
                 // {REF:W@S:text} — delegate to Database.ResolveField
                 if (entry.Database is null)
                 {
@@ -176,9 +169,8 @@ public static partial class PlaceholderResolver
                 // The token IS the value. Database.ResolveField expects a field key
                 // and reads the {REF:…} from that field. For direct token resolution,
                 // we need to resolve the REF value directly.
-                string inner = token[1..^1]; // strip { and }
-                return ResolveReferenceToken(entry, inner, depth);
-            }
+                string refInner = token[1..^1]; // strip { and }
+                return ResolveReferenceToken(entry, refInner, depth);
 
             case PlaceholderType.Totp:
                 // TODO: TOTP generation (Phase 4)
@@ -194,10 +186,8 @@ public static partial class PlaceholderResolver
             case PlaceholderType.UrlUserInfo:
             case PlaceholderType.UrlUserName:
             case PlaceholderType.UrlPassword:
-            {
                 string resolvedUrl = ResolveRecursive(entry, entry.Url, depth);
                 return ResolveUrlPlaceholder(resolvedUrl, type);
-            }
 
             case PlaceholderType.DateTimeSimple:
             case PlaceholderType.DateTimeYear:
@@ -267,7 +257,10 @@ public static partial class PlaceholderResolver
 
         if (refInfo.SearchIn == 'I')
         {
-            if (entry.Database.FindEntryByUuid(TryParseHexGuid(refInfo.SearchValue)) is { } found)
+            if (
+                GuidRfc4122.TryParseHex(refInfo.SearchValue, out Guid uuid)
+                && entry.Database.FindEntryByUuid(uuid) is Entry found
+            )
             {
                 return found;
             }
@@ -290,16 +283,6 @@ public static partial class PlaceholderResolver
         return entry
             .Database.FindAllEntries(e => e.Attributes.Get(fieldKey) == refInfo.SearchValue)
             .FirstOrDefault();
-    }
-
-    private static Guid TryParseHexGuid(string hex)
-    {
-        if (hex.Length != 32)
-        {
-            return Guid.Empty;
-        }
-        string formatted = $"{hex[..8]}-{hex[8..12]}-{hex[12..16]}-{hex[16..20]}-{hex[20..]}";
-        return Guid.TryParse(formatted, out Guid guid) ? guid : Guid.Empty;
     }
 
     // ── Type classification ──────────────────────────────────────────────────
