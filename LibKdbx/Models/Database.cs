@@ -229,13 +229,9 @@ public class Database : IDisposable
             return bin;
         }
 
-        bin = new Group
-        {
-            Uuid = Metadata?.RecycleBinUuid ?? Guid.NewGuid(),
-            Name = "Recycle Bin",
-            IsExpanded = false,
-        };
+        bin = new Group { Name = "Recycle Bin", IsExpanded = false };
         RootGroup.AddGroup(bin);
+        Metadata!.RecycleBinUuid = bin.Uuid;
         return bin;
     }
 
