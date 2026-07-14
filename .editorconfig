@@ -172,6 +172,41 @@ indent_size = 2
 [*.{json,yaml,yml}]
 indent_size = 2
 
+# Roslynator — match existing style preferences
+roslynator_max_line_length = 100
+roslynator_use_var = never
+
+# Roslynator — promote high-signal quality rules to warning
+# (default severity in parens; CLI --severity-level warning only reports >= warning)
+
+# Correctness / bug-prone
+dotnet_diagnostic.RCS1047.severity = warning   # non-async method name should not end with 'Async' (suggestion)
+dotnet_diagnostic.RCS1130.severity = warning   # bitwise on enum without Flags (suggestion)
+dotnet_diagnostic.RCS1166.severity = warning   # value type compared to null (suggestion)
+dotnet_diagnostic.RCS1199.severity = warning   # unnecessary null check (suggestion)
+dotnet_diagnostic.RCS1202.severity = warning   # avoid NullReferenceException (suggestion)
+dotnet_diagnostic.RCS1233.severity = warning   # use short-circuiting operator (suggestion)
+dotnet_diagnostic.RCS1249.severity = warning   # unnecessary null-forgiving operator (suggestion)
+dotnet_diagnostic.RCS1256.severity = warning   # invalid argument null check (suggestion)
+
+# Code quality / simplification
+dotnet_diagnostic.RCS1058.severity = warning   # use compound assignment (suggestion)
+dotnet_diagnostic.RCS1084.severity = warning   # use coalesce instead of conditional (suggestion)
+dotnet_diagnostic.RCS1085.severity = warning   # use auto-implemented property (suggestion)
+dotnet_diagnostic.RCS1098.severity = warning   # constant on right side of comparison (suggestion)
+dotnet_diagnostic.RCS1113.severity = warning   # use string.IsNullOrEmpty (suggestion)
+dotnet_diagnostic.RCS1128.severity = warning   # use coalesce expression (suggestion)
+dotnet_diagnostic.RCS1146.severity = warning   # use conditional access (suggestion)
+dotnet_diagnostic.RCS1156.severity = warning   # use string.Length instead of comparison (suggestion)
+dotnet_diagnostic.RCS1169.severity = warning   # make field read-only (suggestion)
+dotnet_diagnostic.RCS1173.severity = warning   # use coalesce instead of 'if' (suggestion)
+dotnet_diagnostic.RCS1204.severity = warning   # use EventArgs.Empty (suggestion)
+dotnet_diagnostic.RCS1220.severity = warning   # use pattern matching (is + cast) (suggestion)
+dotnet_diagnostic.RCS1221.severity = warning   # use pattern matching (as + null check) (suggestion)
+dotnet_diagnostic.RCS1225.severity = warning   # make class sealed (suggestion)
+dotnet_diagnostic.RCS1229.severity = warning   # use async/await when necessary (suggestion)
+dotnet_diagnostic.RCS1236.severity = warning   # use exception filter (suggestion)
+
 # Shell scripts
 [*.sh]
 end_of_line = lf
