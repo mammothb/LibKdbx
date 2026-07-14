@@ -88,7 +88,8 @@ public class SettingsTests
             CipherAlgorithm.Aes256Cbc,
             ProtectedStreamAlgorithm.Salsa20,
             rounds: 100_000,
-            compress: false);
+            compress: false
+        );
 
         var settings = Settings.FromHeader(header, ProtectedStreamAlgorithm.Salsa20);
         settings.Format.ShouldBe(KdbxFormat.Kdbx3);

@@ -88,7 +88,10 @@ public class Version : IEquatable<Version>, IComparable<Version>
     public static bool operator !=(Version? v1, Version? v2) => !(v1 == v2);
 
     public static bool operator >(Version v1, Version v2) => v1.CompareTo(v2) > 0;
+
     public static bool operator >=(Version v1, Version v2) => v1.CompareTo(v2) >= 0;
+
     public static bool operator <(Version v1, Version v2) => v1.CompareTo(v2) < 0;
+
     public static bool operator <=(Version v1, Version v2) => v1.CompareTo(v2) <= 0;
 }

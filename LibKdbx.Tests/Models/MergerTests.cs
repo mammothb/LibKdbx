@@ -557,6 +557,55 @@ public class MergerTests
         );
     }
 
+    // ── Entry CustomData merge ───────────────────────────────────────────
+
+    [Fact]
+    public void Merge_Entry_CustomData_Added_From_Source()
+    {
+        (Database source, Database target) = CreatePair();
+        Guid uuid = Guid.NewGuid();
+
+        Entry sourceEntry = new() { Title = "S", Uuid = uuid };
+        sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
+        sourceEntry.CustomData = new CustomData();
+        sourceEntry.CustomData.Set("Plugin", "enabled");
+        source.RootGroup!.AddEntry(sourceEntry);
+
+        Entry targetEntry = new() { Title = "T", Uuid = uuid };
+        targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        target.RootGroup!.AddEntry(targetEntry);
+
+        Merger.Merge(source, target);
+
+        target.RootGroup.Entries[0].CustomData!.GetValue("Plugin").ShouldBe("enabled");
+    }
+
+    // ── Group Synchronize mode ──────────────────────────────────────────
+
+    [Fact]
+    public void Merge_Group_Synchronize_Updates_Name()
+    {
+        (Database source, Database target) = CreatePair();
+        Guid groupUuid = Guid.NewGuid();
+
+        Group sourceGroup = new() { Name = "SourceG", Uuid = groupUuid };
+        sourceGroup.Times.LastModificationTime = new DateTime(2025, 2, 1);
+        sourceGroup.Notes = "FromSource";
+        source.RootGroup!.AddGroup(sourceGroup);
+
+        Group targetGroup = new() { Name = "TargetG", Uuid = groupUuid };
+        targetGroup.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        targetGroup.Notes = "FromTarget";
+        target.RootGroup!.AddGroup(targetGroup);
+
+        Merger.Merge(source, target, MergeMode.Synchronize);
+
+        Group result = target.RootGroup.Groups[0];
+        // Synchronize: source overwrites regardless of time
+        result.Name.ShouldBe("SourceG");
+        result.Notes.ShouldBe("FromSource");
+    }
+
     // ── Edge cases ────────────────────────────────────────────────────────
 
     [Fact]

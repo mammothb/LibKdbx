@@ -50,13 +50,14 @@ public readonly struct FieldReference
     }
 
     /// <summary>Maps a single-char field code to its attribute key.</summary>
-    public static string? FieldCodeToKey(char code) => char.ToUpperInvariant(code) switch
-    {
-        'T' => "Title",
-        'U' => "UserName",
-        'P' => "Password",
-        'A' => "URL",
-        'N' => "Notes",
-        _ => null,
-    };
+    public static string? FieldCodeToKey(char code) =>
+        char.ToUpperInvariant(code) switch
+        {
+            'T' => "Title",
+            'U' => "UserName",
+            'P' => "Password",
+            'A' => "URL",
+            'N' => "Notes",
+            _ => null,
+        };
 }

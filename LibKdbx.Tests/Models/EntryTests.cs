@@ -113,8 +113,73 @@ public class EntryTests
     }
 
     [Fact]
+    public void AutoType_Clone_Is_Independent()
+    {
+        AutoType orig = new()
+        {
+            Enabled = false,
+            DataTransferObfuscation = 2,
+            DefaultSequence = "{USERNAME}{TAB}{PASSWORD}",
+        };
+        orig.Associations.Add(
+            new AutoTypeAssociation { Window = "Firefox", Sequence = "{PASSWORD}{ENTER}" }
+        );
+
+        AutoType clone = orig.Clone();
+
+        clone.Enabled = true;
+        clone.Associations[0].Window = "Chrome";
+
+        orig.Enabled.ShouldBeFalse();
+        orig.Associations[0].Window.ShouldBe("Firefox");
+        clone.Enabled.ShouldBeTrue();
+        clone.Associations[0].Window.ShouldBe("Chrome");
+    }
+
+    [Fact]
     public void CustomData_Is_Null_ByDefault()
     {
         new Entry().CustomData.ShouldBeNull();
+    }
+
+    // ── Delete / MoveTo ─────────────────────────────────────────────────
+
+    [Fact]
+    public void Delete_Null_ParentGroup_Does_Nothing()
+    {
+        Entry orphan = new() { Title = "Orphan" };
+        orphan.Delete();
+        orphan.ParentGroup.ShouldBeNull();
+    }
+
+    [Fact]
+    public void MoveTo_Updates_ParentGroup()
+    {
+        Group root = new();
+        Group target = new();
+        Entry entry = new() { Title = "Moved" };
+        root.AddEntry(entry);
+
+        entry.MoveTo(target);
+
+        entry.ParentGroup.ShouldBe(target);
+        root.Entries.Count.ShouldBe(0);
+        target.Entries.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void IsRecycled_Null_Database_Returns_False()
+    {
+        Group root = new();
+        Entry entry = new();
+        root.AddEntry(entry);
+        entry.IsRecycled().ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsRecycled_Null_ParentGroup_Returns_False()
+    {
+        Entry entry = new();
+        entry.IsRecycled().ShouldBeFalse();
     }
 }

@@ -139,4 +139,67 @@ public class SymmetricCipherTests
     {
         Should.Throw<NotSupportedException>(() => SymmetricCipher.FromUuid(Guid.NewGuid()));
     }
+
+    // ── AES-128-CBC ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void Aes128Cbc_EncryptDecrypt_RoundTrip()
+    {
+        byte[] key = new byte[16];
+        byte[] iv = new byte[16];
+        RandomNumberGenerator.Fill(key);
+        RandomNumberGenerator.Fill(iv);
+
+        (byte[] encrypted, byte[] plaintext) = Encrypt(CipherAlgorithm.Aes128Cbc, key, iv);
+        byte[] decrypted = Decrypt(CipherAlgorithm.Aes128Cbc, key, iv, encrypted);
+        decrypted.ShouldBe(plaintext);
+    }
+
+    // ── Stream property coverage ────────────────────────────────────────
+
+    [Fact]
+    public void CipherStream_Properties_Throw_Or_Return_Correctly()
+    {
+        byte[] key = new byte[32];
+        byte[] iv = new byte[12];
+        RandomNumberGenerator.Fill(key);
+        RandomNumberGenerator.Fill(iv);
+
+        SymmetricCipher cipher = new(CipherAlgorithm.ChaCha20, key, iv);
+        using var inner = new MemoryStream();
+        using Stream stream = cipher.CreateEncryptingStream(inner);
+
+        stream.CanSeek.ShouldBeFalse();
+        Should.Throw<NotSupportedException>(() =>
+        {
+            long _ = stream.Length;
+        });
+        Should.Throw<NotSupportedException>(() =>
+        {
+            long _ = stream.Position;
+        });
+        Should.Throw<NotSupportedException>(() => stream.Seek(0, SeekOrigin.Begin));
+        Should.Throw<NotSupportedException>(() => stream.SetLength(0));
+    }
+
+    [Fact]
+    public void Twofish_Stream_Write_Then_Dispose_Flushes()
+    {
+        byte[] key = new byte[32];
+        byte[] iv = new byte[16];
+        RandomNumberGenerator.Fill(key);
+        RandomNumberGenerator.Fill(iv);
+
+        SymmetricCipher cipher = new(CipherAlgorithm.Twofish256Cbc, key, iv);
+        var inner = new MemoryStream();
+        var wrapper = new NonDisposingStream(inner);
+        using (Stream stream = cipher.CreateEncryptingStream(wrapper))
+        {
+            stream.Write("test data"u8.ToArray());
+            // Flush should not throw
+            stream.Flush();
+        }
+        // After dispose, inner stream should have encrypted data
+        inner.Length.ShouldBeGreaterThan(0);
+    }
 }

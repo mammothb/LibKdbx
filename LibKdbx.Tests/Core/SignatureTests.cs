@@ -40,6 +40,24 @@ public class SignatureTests
         (a == b).ShouldBeTrue();
         (a != c).ShouldBeTrue();
     }
+
+    [Fact]
+    public void Equals_Null_Returns_False()
+    {
+        new Signature(1, 2).Equals(null).ShouldBeFalse();
+        new Signature(1, 2).Equals((object?)null).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void ReadWrite_Stream_Overload()
+    {
+        var original = new Signature(0xAAAAAAAA, 0xBBBBBBBB);
+        using var ms = new MemoryStream();
+        original.Write(ms);
+        ms.Position = 0;
+        var read = Signature.Read(ms);
+        read.ShouldBe(original);
+    }
 }
 
 public class Signature_Kdbx3_Tests
