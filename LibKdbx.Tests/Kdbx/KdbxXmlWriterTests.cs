@@ -312,8 +312,8 @@ public class KdbxXmlWriterTests
         (Database db, ProtectedStream ps, MemoryStream ms) = Setup();
         DateTime t1 = new(2024, 6, 1, 0, 0, 0, DateTimeKind.Utc);
         DateTime t2 = new(2024, 7, 15, 0, 0, 0, DateTimeKind.Utc);
-        db.DeletedObjects.Add(new DeletedObject(Guid.NewGuid(), t1));
-        db.DeletedObjects.Add(new DeletedObject(Guid.NewGuid(), t2));
+        db._deletedObjects.Add(new DeletedObject(Guid.NewGuid(), t1));
+        db._deletedObjects.Add(new DeletedObject(Guid.NewGuid(), t2));
 
         new KdbxXmlWriter(db, ps, isV4: true).WriteTo(ms);
         XDocument doc = ParseXml(ms);
@@ -328,7 +328,7 @@ public class KdbxXmlWriterTests
     public void Metadata_CustomIcons_Basic()
     {
         (Database db, ProtectedStream ps, MemoryStream ms) = Setup();
-        db.Metadata!.CustomIcons.Add(
+        db.Metadata!._customIcons.Add(
             new CustomIcon { Uuid = Guid.NewGuid(), Data = [0x01, 0x02, 0x03] }
         );
 
@@ -347,7 +347,7 @@ public class KdbxXmlWriterTests
     {
         (Database db, ProtectedStream ps, MemoryStream ms) = Setup();
         DateTime modTime = new(2024, 3, 15, 0, 0, 0, DateTimeKind.Utc);
-        db.Metadata!.CustomIcons.Add(
+        db.Metadata!._customIcons.Add(
             new CustomIcon
             {
                 Uuid = Guid.NewGuid(),
@@ -400,8 +400,8 @@ public class KdbxXmlWriterTests
     {
         (Database db, ProtectedStream ps, MemoryStream ms) = Setup();
         Entry entry = new() { Title = "V2" };
-        entry.History.Add(new Entry { Title = "V1" });
-        entry.History.Add(new Entry { Title = "V0" });
+        entry._history.Add(new Entry { Title = "V1" });
+        entry._history.Add(new Entry { Title = "V0" });
         db.RootGroup!.AddEntry(entry);
 
         new KdbxXmlWriter(db, ps, isV4: true).WriteTo(ms);

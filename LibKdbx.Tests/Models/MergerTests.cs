@@ -358,7 +358,7 @@ public class MergerTests
         Guid uuid = Guid.NewGuid();
 
         target.RootGroup!.AddEntry(new Entry { Title = "ToDelete", Uuid = uuid });
-        source.DeletedObjects.Add(
+        source._deletedObjects.Add(
             new DeletedObject { Uuid = uuid, DeletionTime = DateTime.UtcNow }
         );
 
@@ -379,8 +379,8 @@ public class MergerTests
         var objA = new DeletedObject { Uuid = Guid.NewGuid(), DeletionTime = DateTime.UtcNow };
         var objB = new DeletedObject { Uuid = Guid.NewGuid(), DeletionTime = DateTime.UtcNow };
 
-        source.DeletedObjects.Add(objA);
-        target.DeletedObjects.Add(objB);
+        source._deletedObjects.Add(objA);
+        target._deletedObjects.Add(objB);
 
         Merger.Merge(source, target, MergeMode.Synchronize);
 
@@ -399,7 +399,7 @@ public class MergerTests
 
         Entry sourceEntry = new() { Title = "S_v2", Uuid = uuid };
         sourceEntry.Times.LastModificationTime = new DateTime(2025, 3, 1);
-        sourceEntry.History.Add(new Entry { Title = "S_v1" });
+        sourceEntry._history.Add(new Entry { Title = "S_v1" });
         source.RootGroup!.AddEntry(sourceEntry);
 
         Entry targetEntry = new() { Title = "T_v1", Uuid = uuid };
@@ -424,12 +424,12 @@ public class MergerTests
 
         Entry sourceEntry = new() { Title = "S_v1", Uuid = uuid };
         sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
-        sourceEntry.History.Add(new Entry { Title = "S_v0" });
+        sourceEntry._history.Add(new Entry { Title = "S_v0" });
         source.RootGroup!.AddEntry(sourceEntry);
 
         Entry targetEntry = new() { Title = "T_v2", Uuid = uuid };
         targetEntry.Times.LastModificationTime = new DateTime(2025, 3, 1);
-        targetEntry.History.Add(new Entry { Title = "T_v1" });
+        targetEntry._history.Add(new Entry { Title = "T_v1" });
         target.RootGroup!.AddEntry(targetEntry);
 
         Merger.Merge(source, target);
@@ -453,14 +453,14 @@ public class MergerTests
 
         Entry sourceEntry = new() { Title = "S", Uuid = uuid };
         sourceEntry.Times.LastModificationTime = new DateTime(2025, 4, 1);
-        sourceEntry.History.Add(new Entry { Title = "H3" });
-        sourceEntry.History.Add(new Entry { Title = "H4" });
+        sourceEntry._history.Add(new Entry { Title = "H3" });
+        sourceEntry._history.Add(new Entry { Title = "H4" });
         source.RootGroup!.AddEntry(sourceEntry);
 
         Entry targetEntry = new() { Title = "T", Uuid = uuid };
         targetEntry.Times.LastModificationTime = new DateTime(2025, 3, 1);
-        targetEntry.History.Add(new Entry { Title = "H1" });
-        targetEntry.History.Add(new Entry { Title = "H2" });
+        targetEntry._history.Add(new Entry { Title = "H1" });
+        targetEntry._history.Add(new Entry { Title = "H2" });
         target.RootGroup!.AddEntry(targetEntry);
 
         Merger.Merge(source, target);

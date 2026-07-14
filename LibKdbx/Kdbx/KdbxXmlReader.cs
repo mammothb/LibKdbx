@@ -70,7 +70,7 @@ public class KdbxXmlReader(
 
         XElement? memoryProtection = el.Element("MemoryProtection");
 
-        return new Metadata
+        Metadata meta = new Metadata
         {
             Generator = el.Element("Generator")?.Value ?? "",
             Name = el.Element("DatabaseName")?.Value ?? "",
@@ -99,9 +99,10 @@ public class KdbxXmlReader(
             ),
             LastSelectedGroup = ParseUuid(el.Element("LastSelectedGroup")?.Value),
             LastTopVisibleGroup = ParseUuid(el.Element("LastTopVisibleGroup")?.Value),
-            CustomIcons = ParseCustomIcons(el.Element("CustomIcons")),
             CustomData = ParseCustomData(el.Element("CustomData")),
         };
+        meta._customIcons.AddRange(ParseCustomIcons(el.Element("CustomIcons")));
+        return meta;
     }
 
     // ── Custom icons ─────────────────────────────────────────────────────
@@ -210,7 +211,7 @@ public class KdbxXmlReader(
         {
             Guid uuid = ParseUuid(objEl.Element("UUID")?.Value);
             DateTime deletionTime = ParseDate(objEl.Element("DeletionTime")?.Value);
-            _db.DeletedObjects.Add(new DeletedObject(uuid, deletionTime));
+            _db._deletedObjects.Add(new DeletedObject(uuid, deletionTime));
         }
     }
 
@@ -290,7 +291,7 @@ public class KdbxXmlReader(
         {
             foreach (XElement histEntry in historyEl.Elements("Entry"))
             {
-                entry.History.Add(ParseEntry(histEntry));
+                entry._history.Add(ParseEntry(histEntry));
             }
         }
 

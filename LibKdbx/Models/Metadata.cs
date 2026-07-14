@@ -49,7 +49,10 @@ public class Metadata
 
     // ── Custom icons ───────────────────────────────────────────────────────
 
-    public List<CustomIcon> CustomIcons { get; set; } = [];
+    internal readonly List<CustomIcon> _customIcons = [];
+
+    /// <summary>Custom icons referenced by groups and entries.</summary>
+    public IReadOnlyList<CustomIcon> CustomIcons => _customIcons;
 
     // ── Custom data ────────────────────────────────────────────────────────
 

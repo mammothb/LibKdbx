@@ -22,8 +22,10 @@ public class Database : IDisposable
 
     private readonly Dictionary<Guid, Entry> _entryIndex = [];
 
+    internal readonly List<DeletedObject> _deletedObjects = [];
+
     /// <summary>Permanently deleted objects (UUID + deletion time).</summary>
-    public List<DeletedObject> DeletedObjects { get; } = [];
+    public IReadOnlyList<DeletedObject> DeletedObjects => _deletedObjects;
 
     // ── Constructors ──────────────────────────────────────────────────────
 

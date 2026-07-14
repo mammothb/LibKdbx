@@ -68,7 +68,7 @@ public class BinaryPoolBuilderTests
         // Create a history entry with different attachment
         Entry snapshot = new();
         snapshot.Attachments.Set("old.bin", data);
-        e.History.Add(snapshot);
+        e._history.Add(snapshot);
 
         Group root = new();
         root.AddEntry(e);

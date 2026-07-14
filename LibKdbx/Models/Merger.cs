@@ -287,11 +287,11 @@ public static class Merger
         // Sort by modification time, keep newest maxItems
         List<Entry> sorted = [.. merged.OrderBy(e => e.Times.LastModificationTime)];
 
-        target.History.Clear();
+        target._history.Clear();
         int skip = Math.Max(0, sorted.Count - maxItems);
         for (int i = skip; i < sorted.Count; i++)
         {
-            target.History.Add(sorted[i]);
+            target._history.Add(sorted[i]);
         }
     }
 
@@ -355,7 +355,7 @@ public static class Merger
             {
                 if (!targetDeletionUuids.Contains(obj.Uuid))
                 {
-                    target.DeletedObjects.Add(obj);
+                    target._deletedObjects.Add(obj);
                 }
             }
         }

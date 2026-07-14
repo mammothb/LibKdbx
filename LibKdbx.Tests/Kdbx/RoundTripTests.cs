@@ -201,8 +201,8 @@ public class RoundTripTests
         Database writeDb = MakeDb("pw", KdbxFormat.Kdbx4);
         DateTime t1 = new(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         DateTime t2 = new(2024, 6, 15, 0, 0, 0, DateTimeKind.Utc);
-        writeDb.DeletedObjects.Add(new DeletedObject(Guid.NewGuid(), t1));
-        writeDb.DeletedObjects.Add(new DeletedObject(Guid.NewGuid(), t2));
+        writeDb._deletedObjects.Add(new DeletedObject(Guid.NewGuid(), t1));
+        writeDb._deletedObjects.Add(new DeletedObject(Guid.NewGuid(), t2));
 
         using MemoryStream ms = new();
         new KdbxWriter(writeDb).WriteTo(ms);

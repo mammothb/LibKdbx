@@ -374,7 +374,7 @@ public class KdbxXmlReaderTests
     {
         Database writeDb = MakeV3Db("v3del");
         DateTime t1 = new(2024, 6, 1, 0, 0, 0, DateTimeKind.Utc);
-        writeDb.DeletedObjects.Add(new DeletedObject(Guid.NewGuid(), t1));
+        writeDb._deletedObjects.Add(new DeletedObject(Guid.NewGuid(), t1));
 
         using MemoryStream ms = new();
         new KdbxWriter(writeDb).WriteTo(ms);
