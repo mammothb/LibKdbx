@@ -280,6 +280,58 @@ public class Group
         return false;
     }
 
+    // ── Hierarchy ───────────────────────────────────────────────────────
+
+    /// <summary>Returns this group and all descendant groups.</summary>
+    internal List<Group> GroupsRecursive(bool includeSelf = true)
+    {
+        List<Group> result = [];
+        if (includeSelf)
+        {
+            result.Add(this);
+        }
+        foreach (Group sub in _groups)
+        {
+            result.AddRange(sub.GroupsRecursive(true));
+        }
+        return result;
+    }
+
+    /// <summary>Returns the full hierarchy path as list of group names from root to this group.</summary>
+    internal List<string> Hierarchy()
+    {
+        List<string> path = [];
+        Group? current = this;
+        while (current is not null)
+        {
+            path.Insert(0, current.Name);
+            current = current.ParentGroup;
+        }
+        return path;
+    }
+
+    /// <summary>
+    /// Resolves the effective EnableSearching flag by walking up the hierarchy.
+    /// Returns false only if a parent has EnableSearching = Disable (not Inherit).
+    /// </summary>
+    internal bool ResolveSearchingEnabled()
+    {
+        Group? current = this;
+        while (current is not null)
+        {
+            if (current.EnableSearching == TriState.Disable)
+            {
+                return false;
+            }
+            if (current.EnableSearching == TriState.Enable)
+            {
+                return true;
+            }
+            current = current.ParentGroup;
+        }
+        return true; // default
+    }
+
     // ── Internal ──────────────────────────────────────────────────────────
 
     internal void SetDatabaseRecursive(Database? db)

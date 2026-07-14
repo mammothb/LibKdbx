@@ -286,6 +286,12 @@ public class Database : IDisposable
             return value;
         }
 
+        // WantedField 'I' returns the target entry's UUID as a hex string
+        if (refInfo.WantedField == 'I')
+        {
+            return target.Uuid.ToString("N");
+        }
+
         string? fieldKey = FieldReference.FieldCodeToKey(refInfo.WantedField);
         if (fieldKey is null)
         {
@@ -308,6 +314,13 @@ public class Database : IDisposable
                 return _entryIndex.GetValueOrDefault(uuid);
             }
             return null;
+        }
+
+        if (refInfo.SearchIn == 'O')
+        {
+            return _entryIndex.Values.FirstOrDefault(e =>
+                e.Attributes.ContainsValue(refInfo.SearchValue)
+            );
         }
 
         string? fieldKey = FieldReference.FieldCodeToKey(refInfo.SearchIn);
