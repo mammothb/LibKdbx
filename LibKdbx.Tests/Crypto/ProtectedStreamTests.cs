@@ -7,8 +7,7 @@ public class ProtectedStreamTests
     [Fact]
     public void ChaCha20_RoundTrip()
     {
-        byte[] key = new byte[32];
-        RandomNumberGenerator.Fill(key);
+        byte[] key = CryptoHelpers.GetRandomBytes(32);
         byte[] plaintext = "Protected field value — secret data."u8.ToArray();
 
         ProtectedStream stream = new(ProtectedStreamAlgorithm.ChaCha20, key);
@@ -25,8 +24,7 @@ public class ProtectedStreamTests
     [Fact]
     public void Salsa20_RoundTrip()
     {
-        byte[] key = new byte[32];
-        RandomNumberGenerator.Fill(key);
+        byte[] key = CryptoHelpers.GetRandomBytes(32);
         byte[] plaintext = "Another protected field."u8.ToArray();
 
         ProtectedStream stream = new(ProtectedStreamAlgorithm.Salsa20, key);
@@ -42,8 +40,7 @@ public class ProtectedStreamTests
     [Fact]
     public void Keystream_Advances_Consistently()
     {
-        byte[] key = new byte[32];
-        RandomNumberGenerator.Fill(key);
+        byte[] key = CryptoHelpers.GetRandomBytes(32);
 
         byte[] part1 = "AAA"u8.ToArray();
         byte[] part2 = "BBB"u8.ToArray();
@@ -65,15 +62,22 @@ public class ProtectedStreamTests
     [Fact]
     public void DifferentKeys_Produce_Different_Output()
     {
-        byte[] key1 = new byte[32];
-        byte[] key2 = new byte[32];
-        RandomNumberGenerator.Fill(key1);
-        RandomNumberGenerator.Fill(key2);
+        byte[] key1 = CryptoHelpers.GetRandomBytes(32);
+        byte[] key2 = CryptoHelpers.GetRandomBytes(32);
         byte[] plaintext = "test"u8.ToArray();
 
         ProtectedStream stream1 = new(ProtectedStreamAlgorithm.ChaCha20, key1);
         ProtectedStream stream2 = new(ProtectedStreamAlgorithm.ChaCha20, key2);
 
         stream1.Process(plaintext).ShouldNotBe(stream2.Process(plaintext));
+    }
+
+    [Fact]
+    public void Constructor_UnknownAlgorithm_Throws()
+    {
+        byte[] key = new byte[32];
+        // Cast an invalid integer to the enum to hit the default throw
+        ProtectedStreamAlgorithm bad = (ProtectedStreamAlgorithm)99;
+        Should.Throw<NotSupportedException>(() => new ProtectedStream(bad, key));
     }
 }

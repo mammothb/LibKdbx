@@ -66,48 +66,27 @@ public class SymmetricCipherTests
         return resultMs.ToArray();
     }
 
-    // ── AES-256-CBC ─────────────────────────────────────────────────────────
+    // ── Encryption/decryption round-trip ────────────────────────────────────
 
-    [Fact]
-    public void Aes256Cbc_EncryptDecrypt_RoundTrip()
+    public static IEnumerable<object[]> CipherAlgorithms()
     {
-        byte[] key = new byte[32];
-        byte[] iv = new byte[16];
-        RandomNumberGenerator.Fill(key);
-        RandomNumberGenerator.Fill(iv);
-
-        (byte[] encrypted, byte[] plaintext) = Encrypt(CipherAlgorithm.Aes256Cbc, key, iv);
-        byte[] decrypted = Decrypt(CipherAlgorithm.Aes256Cbc, key, iv, encrypted);
-        decrypted.ShouldBe(plaintext);
+        yield return new object[] { CipherAlgorithm.Aes256Cbc, 32, 16 };
+        yield return new object[] { CipherAlgorithm.ChaCha20, 32, 12 };
+        yield return new object[] { CipherAlgorithm.Twofish256Cbc, 32, 16 };
+        yield return new object[] { CipherAlgorithm.Aes128Cbc, 16, 16 };
     }
 
-    // ── ChaCha20 ────────────────────────────────────────────────────────────
-
-    [Fact]
-    public void ChaCha20_EncryptDecrypt_RoundTrip()
+    [Theory]
+    [MemberData(nameof(CipherAlgorithms))]
+    public void EncryptDecrypt_RoundTrip(CipherAlgorithm algo, int keySize, int ivSize)
     {
-        byte[] key = new byte[32];
-        byte[] iv = new byte[12]; // ChaCha20 uses 12-byte nonce
+        byte[] key = new byte[keySize];
+        byte[] iv = new byte[ivSize];
         RandomNumberGenerator.Fill(key);
         RandomNumberGenerator.Fill(iv);
 
-        (byte[] encrypted, byte[] plaintext) = Encrypt(CipherAlgorithm.ChaCha20, key, iv);
-        byte[] decrypted = Decrypt(CipherAlgorithm.ChaCha20, key, iv, encrypted);
-        decrypted.ShouldBe(plaintext);
-    }
-
-    // ── Twofish-CBC ─────────────────────────────────────────────────────────
-
-    [Fact]
-    public void TwofishCbc_EncryptDecrypt_RoundTrip()
-    {
-        byte[] key = new byte[32];
-        byte[] iv = new byte[16];
-        RandomNumberGenerator.Fill(key);
-        RandomNumberGenerator.Fill(iv);
-
-        (byte[] encrypted, byte[] plaintext) = Encrypt(CipherAlgorithm.Twofish256Cbc, key, iv);
-        byte[] decrypted = Decrypt(CipherAlgorithm.Twofish256Cbc, key, iv, encrypted);
+        (byte[] encrypted, byte[] plaintext) = Encrypt(algo, key, iv);
+        byte[] decrypted = Decrypt(algo, key, iv, encrypted);
         decrypted.ShouldBe(plaintext);
     }
 
@@ -140,30 +119,13 @@ public class SymmetricCipherTests
         Should.Throw<NotSupportedException>(() => SymmetricCipher.FromUuid(Guid.NewGuid()));
     }
 
-    // ── AES-128-CBC ─────────────────────────────────────────────────────
-
-    [Fact]
-    public void Aes128Cbc_EncryptDecrypt_RoundTrip()
-    {
-        byte[] key = new byte[16];
-        byte[] iv = new byte[16];
-        RandomNumberGenerator.Fill(key);
-        RandomNumberGenerator.Fill(iv);
-
-        (byte[] encrypted, byte[] plaintext) = Encrypt(CipherAlgorithm.Aes128Cbc, key, iv);
-        byte[] decrypted = Decrypt(CipherAlgorithm.Aes128Cbc, key, iv, encrypted);
-        decrypted.ShouldBe(plaintext);
-    }
-
     // ── Stream property coverage ────────────────────────────────────────
 
     [Fact]
     public void CipherStream_Properties_Throw_Or_Return_Correctly()
     {
-        byte[] key = new byte[32];
-        byte[] iv = new byte[12];
-        RandomNumberGenerator.Fill(key);
-        RandomNumberGenerator.Fill(iv);
+        byte[] key = CryptoHelpers.GetRandomBytes(32);
+        byte[] iv = CryptoHelpers.GetRandomBytes(12);
 
         SymmetricCipher cipher = new(CipherAlgorithm.ChaCha20, key, iv);
         using var inner = new MemoryStream();
@@ -185,10 +147,8 @@ public class SymmetricCipherTests
     [Fact]
     public void Twofish_Stream_Write_Then_Dispose_Flushes()
     {
-        byte[] key = new byte[32];
-        byte[] iv = new byte[16];
-        RandomNumberGenerator.Fill(key);
-        RandomNumberGenerator.Fill(iv);
+        byte[] key = CryptoHelpers.GetRandomBytes(32);
+        byte[] iv = CryptoHelpers.GetRandomBytes(16);
 
         SymmetricCipher cipher = new(CipherAlgorithm.Twofish256Cbc, key, iv);
         var inner = new MemoryStream();

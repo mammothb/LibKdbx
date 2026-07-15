@@ -136,8 +136,7 @@ public class KdbxHeaderTests
     public void CreateKdf_AesKdf_From_V4_Parameters()
     {
         // Build header with AES-KDF in KdfParameters via $UUID
-        byte[] seed = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(seed);
+        byte[] seed = CryptoHelpers.GetRandomBytes(32);
         var kdf = new AesKdf(seed, 100_000);
         var header = KdbxHeader.CreateNewV4(CipherAlgorithm.ChaCha20, kdf, compress: true);
 
@@ -178,8 +177,7 @@ public class KdbxHeaderTests
             100_000,
             false
         );
-        byte[] key = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(key);
+        byte[] key = CryptoHelpers.GetRandomBytes(32);
         header.SetInnerStream(ProtectedStreamAlgorithm.Salsa20, key);
         // For V3, InnerStreamAlgorithm reflects the set value
         header.InnerStreamAlgorithm.ShouldBe(ProtectedStreamAlgorithm.Salsa20);

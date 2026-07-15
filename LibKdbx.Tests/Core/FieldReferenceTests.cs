@@ -25,6 +25,8 @@ public class FieldReferenceTests
     [InlineData("{NOT_A_REF}")]
     [InlineData("{REF:}")]
     [InlineData("")]
+    [InlineData("{REF:XX@Y:z}")] // missing '@' at position 1
+    [InlineData("{REF:X@Yz}")] // missing ':' at position 3
     public void Parse_Invalid(string value)
     {
         FieldReference.TryParse(value, out _).ShouldBeFalse();

@@ -7,12 +7,10 @@ public class EncryptionKeyTests
     [Fact]
     public void GetKey_Returns_32Bytes()
     {
-        byte[] masterSeed = new byte[32];
-        RandomNumberGenerator.Fill(masterSeed);
+        byte[] masterSeed = CryptoHelpers.GetRandomBytes(32);
 
         using var ck = new CompositeKey("hunter2");
-        byte[] seed = new byte[16];
-        RandomNumberGenerator.Fill(seed);
+        byte[] seed = CryptoHelpers.GetRandomBytes(16);
         AesKdf kdf = new(seed, 1000);
         DerivedKey dk = DerivedKey.Derive(ck, kdf);
 
@@ -23,12 +21,10 @@ public class EncryptionKeyTests
     [Fact]
     public void GetHmacKey_Returns_64Bytes()
     {
-        byte[] masterSeed = new byte[32];
-        RandomNumberGenerator.Fill(masterSeed);
+        byte[] masterSeed = CryptoHelpers.GetRandomBytes(32);
 
         using var ck = new CompositeKey("hunter2");
-        byte[] seed = new byte[16];
-        RandomNumberGenerator.Fill(seed);
+        byte[] seed = CryptoHelpers.GetRandomBytes(16);
         AesKdf kdf = new(seed, 1000);
         DerivedKey dk = DerivedKey.Derive(ck, kdf);
 
@@ -39,12 +35,10 @@ public class EncryptionKeyTests
     [Fact]
     public void Deterministic_Given_SameInputs()
     {
-        byte[] masterSeed = new byte[32];
-        RandomNumberGenerator.Fill(masterSeed);
+        byte[] masterSeed = CryptoHelpers.GetRandomBytes(32);
 
         using var ck = new CompositeKey("test");
-        byte[] seed = new byte[16];
-        RandomNumberGenerator.Fill(seed);
+        byte[] seed = CryptoHelpers.GetRandomBytes(16);
         AesKdf kdf = new(seed, 1000);
         DerivedKey dk = DerivedKey.Derive(ck, kdf);
 
@@ -62,15 +56,12 @@ public class EncryptionKeyTests
     [Fact]
     public void Different_MasterSeed_Different_Keys()
     {
-        byte[] ms1 = new byte[32];
-        byte[] ms2 = new byte[32];
-        RandomNumberGenerator.Fill(ms1);
-        RandomNumberGenerator.Fill(ms2);
+        byte[] ms1 = CryptoHelpers.GetRandomBytes(32);
+        byte[] ms2 = CryptoHelpers.GetRandomBytes(32);
         ms2.ShouldNotBe(ms1);
 
         using var ck = new CompositeKey("test");
-        byte[] seed = new byte[16];
-        RandomNumberGenerator.Fill(seed);
+        byte[] seed = CryptoHelpers.GetRandomBytes(16);
         AesKdf kdf = new(seed, 1000);
         DerivedKey dk = DerivedKey.Derive(ck, kdf);
 

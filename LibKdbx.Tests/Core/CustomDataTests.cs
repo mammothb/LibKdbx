@@ -172,6 +172,14 @@ public class CustomDataTests
     }
 
     [Fact]
+    public void TryGetValue_MissingKey_ReturnsFalse()
+    {
+        var cd = new CustomData();
+        cd.TryGetValue("nope", out string? value).ShouldBeFalse();
+        value.ShouldBeNull();
+    }
+
+    [Fact]
     public void GetItem_Missing_Key_Returns_Null()
     {
         var cd = new CustomData();

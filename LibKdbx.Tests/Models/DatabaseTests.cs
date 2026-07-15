@@ -37,42 +37,25 @@ public class DatabaseTests
     [Fact]
     public void Save_Then_Open_RoundTrip()
     {
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database writeDb = Database.Create("test123");
-            writeDb.Metadata!.Name = "RoundTripDB";
-            Entry entry = new() { Title = "MyEntry", UserName = "alice" };
-            writeDb.RootGroup!.AddEntry(entry);
+        using var dbf = new DatabaseWithFile();
+        dbf.Database.Metadata!.Name = "RoundTripDB";
+        Entry entry = new() { Title = "MyEntry", UserName = "alice" };
+        dbf.Database.RootGroup!.AddEntry(entry);
+        dbf.Save();
 
-            writeDb.SaveAs(path);
-
-            using Database readDb = Database.Open(path, "test123");
-            readDb.Metadata!.Name.ShouldBe("RoundTripDB");
-            readDb.RootGroup!.Entries.Count.ShouldBe(1);
-            readDb.RootGroup.Entries[0].Title.ShouldBe("MyEntry");
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        using Database readDb = dbf.Open();
+        readDb.Metadata!.Name.ShouldBe("RoundTripDB");
+        readDb.RootGroup!.Entries.Count.ShouldBe(1);
+        readDb.RootGroup.Entries[0].Title.ShouldBe("MyEntry");
     }
 
     [Fact]
     public void Open_Wrong_Password_Throws()
     {
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database writeDb = Database.Create("correct");
-            writeDb.SaveAs(path);
+        using var dbf = new DatabaseWithFile("correct");
+        dbf.Save();
 
-            Should.Throw<Exception>(() => Database.Open(path, "wrong"));
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        Should.Throw<Exception>(() => dbf.Open("wrong"));
     }
 
     [Fact]
@@ -139,20 +122,12 @@ public class DatabaseTests
     [Fact]
     public void Save_Resets_HasChanges()
     {
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database db = Database.Create("pw");
-            db.RootGroup!.AddEntry(new Entry { Title = "E" });
-            db.HasChanges.ShouldBeTrue();
+        using var dbf = new DatabaseWithFile();
+        dbf.Database.RootGroup!.AddEntry(new Entry { Title = "E" });
+        dbf.Database.HasChanges.ShouldBeTrue();
 
-            db.SaveAs(path);
-            db.HasChanges.ShouldBeFalse();
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        dbf.Save();
+        dbf.Database.HasChanges.ShouldBeFalse();
     }
 
     [Fact]
@@ -169,22 +144,14 @@ public class DatabaseTests
     [Fact]
     public void MergeMode_RoundTrip()
     {
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database writeDb = Database.Create("pw");
-            Group group = new() { Name = "MergeGroup", MergeMode = MergeMode.KeepNewer };
-            writeDb.RootGroup!.AddGroup(group);
-            writeDb.SaveAs(path);
+        using var dbf = new DatabaseWithFile();
+        Group group = new() { Name = "MergeGroup", MergeMode = MergeMode.KeepNewer };
+        dbf.Database.RootGroup!.AddGroup(group);
+        dbf.Save();
 
-            using Database readDb = Database.Open(path, "pw");
-            Group readGroup = readDb.RootGroup!.Groups[0];
-            readGroup.MergeMode.ShouldBe(MergeMode.KeepNewer);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        using Database readDb = dbf.Open();
+        Group readGroup = readDb.RootGroup!.Groups[0];
+        readGroup.MergeMode.ShouldBe(MergeMode.KeepNewer);
     }
 
     [Fact]
@@ -243,19 +210,11 @@ public class DatabaseTests
     [Fact]
     public void Ctor_Path_Password_And_KeyFile_Sets_Both()
     {
-        byte[] keyBytes = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(keyBytes);
-        string keyPath = Path.GetTempFileName();
-        File.WriteAllText(keyPath, Convert.ToHexString(keyBytes), System.Text.Encoding.ASCII);
-        try
-        {
-            using Database db = new("/tmp/test.kdbx", "hunter2", keyPath);
-            db.DatabaseFile!.FullName.ShouldBe("/tmp/test.kdbx");
-        }
-        finally
-        {
-            File.Delete(keyPath);
-        }
+        byte[] keyBytes = CryptoHelpers.GetRandomBytes(32);
+        using var tfKey = new TempFile();
+        tfKey.WriteAllText(Convert.ToHexString(keyBytes));
+        using Database db = new("/tmp/test.kdbx", "hunter2", tfKey.Path);
+        db.DatabaseFile!.FullName.ShouldBe("/tmp/test.kdbx");
     }
 
     // ── Create factories ─────────────────────────────────────────────────
@@ -263,20 +222,12 @@ public class DatabaseTests
     [Fact]
     public void Create_With_KeyFile_Sets_RootGroup()
     {
-        byte[] keyBytes = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(keyBytes);
-        string keyPath = Path.GetTempFileName();
-        File.WriteAllText(keyPath, Convert.ToHexString(keyBytes), System.Text.Encoding.ASCII);
-        try
-        {
-            using Database db = Database.Create("pw", keyPath);
-            db.RootGroup!.Name.ShouldBe("Root");
-            db.Metadata!.Generator.ShouldBe("LibKdbx");
-        }
-        finally
-        {
-            File.Delete(keyPath);
-        }
+        byte[] keyBytes = CryptoHelpers.GetRandomBytes(32);
+        using var tfKey = new TempFile();
+        tfKey.WriteAllText(Convert.ToHexString(keyBytes));
+        using Database db = Database.Create("pw", tfKey.Path);
+        db.RootGroup!.Name.ShouldBe("Root");
+        db.Metadata!.Generator.ShouldBe("LibKdbx");
     }
 
     [Fact]
@@ -308,25 +259,16 @@ public class DatabaseTests
     [Fact]
     public void Open_With_KeyFile()
     {
-        byte[] keyBytes = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(keyBytes);
-        string keyPath = Path.GetTempFileName();
-        File.WriteAllText(keyPath, Convert.ToHexString(keyBytes), System.Text.Encoding.ASCII);
-        string dbPath = Path.GetTempFileName();
-        try
-        {
-            using Database writeDb = Database.Create("pw", keyPath);
-            writeDb.Metadata!.Name = "KeyFileDB";
-            writeDb.SaveAs(dbPath);
+        byte[] keyBytes = CryptoHelpers.GetRandomBytes(32);
+        using var tfKey = new TempFile();
+        tfKey.WriteAllText(Convert.ToHexString(keyBytes));
+        using var tfDb = new TempFile();
+        using Database writeDb = Database.Create("pw", tfKey.Path);
+        writeDb.Metadata!.Name = "KeyFileDB";
+        writeDb.SaveAs(tfDb.Path);
 
-            using Database readDb = Database.Open(dbPath, "pw", keyPath);
-            readDb.Metadata!.Name.ShouldBe("KeyFileDB");
-        }
-        finally
-        {
-            File.Delete(keyPath);
-            File.Delete(dbPath);
-        }
+        using Database readDb = Database.Open(tfDb.Path, "pw", tfKey.Path);
+        readDb.Metadata!.Name.ShouldBe("KeyFileDB");
     }
 
     // ── Save ─────────────────────────────────────────────────────────────
@@ -504,162 +446,107 @@ public class DatabaseTests
     public async Task OpenAsync_SaveAsync_RoundTrip()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database writeDb = Database.Create("test123");
-            writeDb.Metadata!.Name = "AsyncRoundTrip";
-            Entry entry = new() { Title = "AsyncEntry", UserName = "alice" };
-            writeDb.RootGroup!.AddEntry(entry);
+        using var dbf = new DatabaseWithFile();
+        dbf.Database.Metadata!.Name = "AsyncRoundTrip";
+        Entry entry = new() { Title = "AsyncEntry", UserName = "alice" };
+        dbf.Database.RootGroup!.AddEntry(entry);
 
-            await writeDb.SaveAsAsync(path, ct);
+        await dbf.SaveAsync(ct);
 
-            using Database readDb = await Database.OpenAsync(path, "test123", ct: ct);
-            readDb.Metadata!.Name.ShouldBe("AsyncRoundTrip");
-            readDb.RootGroup!.Entries.Count.ShouldBe(1);
-            readDb.RootGroup.Entries[0].Title.ShouldBe("AsyncEntry");
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        using Database readDb = await dbf.OpenAsync(ct: ct);
+        readDb.Metadata!.Name.ShouldBe("AsyncRoundTrip");
+        readDb.RootGroup!.Entries.Count.ShouldBe(1);
+        readDb.RootGroup.Entries[0].Title.ShouldBe("AsyncEntry");
     }
 
     [Fact]
     public async Task OpenAsync_Cancelled_Throws()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database writeDb = Database.Create("pw");
-            await writeDb.SaveAsAsync(path, ct);
+        using var dbf = new DatabaseWithFile();
+        await dbf.SaveAsync(ct);
 
-            using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.Cancel();
+        using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.Cancel();
 
-            await Should.ThrowAsync<OperationCanceledException>(
-                Database.OpenAsync(path, "pw", ct: cts.Token)
-            );
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        await Should.ThrowAsync<OperationCanceledException>(
+            Database.OpenAsync(dbf.Path, "pw", ct: cts.Token)
+        );
     }
 
     [Fact]
     public async Task SaveAsync_Cancelled_Throws()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database db = Database.Create("pw");
+        using var dbf = new DatabaseWithFile();
 
-            using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            cts.Cancel();
+        using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        cts.Cancel();
 
-            await Should.ThrowAsync<OperationCanceledException>(db.SaveAsAsync(path, cts.Token));
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        await Should.ThrowAsync<OperationCanceledException>(
+            dbf.Database.SaveAsAsync(dbf.Path, cts.Token)
+        );
     }
 
     [Fact]
     public async Task OpenAsync_Static_Factory()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database writeDb = Database.Create("pw");
-            writeDb.Metadata!.Name = "StaticFactory";
-            await writeDb.SaveAsAsync(path, ct);
+        using var dbf = new DatabaseWithFile();
+        dbf.Database.Metadata!.Name = "StaticFactory";
+        await dbf.SaveAsync(ct);
 
-            using Database readDb = await Database.OpenAsync(path, "pw", ct: ct);
-            readDb.Metadata!.Name.ShouldBe("StaticFactory");
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        using Database readDb = await dbf.OpenAsync(ct: ct);
+        readDb.Metadata!.Name.ShouldBe("StaticFactory");
     }
 
     [Fact]
     public async Task SaveAsAsync_Changes_Path_And_Saves()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
-        string path1 = Path.GetTempFileName();
-        string path2 = Path.GetTempFileName();
-        try
-        {
-            using Database db = Database.Create("pw");
-            db.Metadata!.Name = "FirstSave";
-            await db.SaveAsAsync(path1, ct);
-            db.DatabaseFile!.FullName.ShouldBe(path1);
+        using var tf1 = new TempFile();
+        using var tf2 = new TempFile();
+        using Database db = Database.Create("pw");
+        db.Metadata!.Name = "FirstSave";
+        await db.SaveAsAsync(tf1.Path, ct);
+        db.DatabaseFile!.FullName.ShouldBe(tf1.Path);
 
-            db.Metadata.Name = "SecondSave";
-            await db.SaveAsAsync(path2, ct);
-            db.DatabaseFile.FullName.ShouldBe(path2);
+        db.Metadata.Name = "SecondSave";
+        await db.SaveAsAsync(tf2.Path, ct);
+        db.DatabaseFile.FullName.ShouldBe(tf2.Path);
 
-            // Verify first file unchanged, second file has new name
-            using Database db1 = await Database.OpenAsync(path1, "pw", ct: ct);
-            db1.Metadata!.Name.ShouldBe("FirstSave");
+        // Verify first file unchanged, second file has new name
+        using Database db1 = await Database.OpenAsync(tf1.Path, "pw", ct: ct);
+        db1.Metadata!.Name.ShouldBe("FirstSave");
 
-            using Database db2 = await Database.OpenAsync(path2, "pw", ct: ct);
-            db2.Metadata!.Name.ShouldBe("SecondSave");
-        }
-        finally
-        {
-            File.Delete(path1);
-            File.Delete(path2);
-        }
+        using Database db2 = await Database.OpenAsync(tf2.Path, "pw", ct: ct);
+        db2.Metadata!.Name.ShouldBe("SecondSave");
     }
 
     [Fact]
     public async Task OpenAsync_With_KeyFile()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
-        byte[] keyBytes = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(keyBytes);
-        string keyPath = Path.GetTempFileName();
-        File.WriteAllText(keyPath, Convert.ToHexString(keyBytes), System.Text.Encoding.ASCII);
-        string dbPath = Path.GetTempFileName();
-        try
-        {
-            using Database writeDb = Database.Create("pw", keyPath);
-            writeDb.Metadata!.Name = "AsyncKeyFile";
-            await writeDb.SaveAsAsync(dbPath, ct);
+        byte[] keyBytes = CryptoHelpers.GetRandomBytes(32);
+        using var tfKey = new TempFile();
+        tfKey.WriteAllText(Convert.ToHexString(keyBytes));
+        using var tfDb = new TempFile();
+        using Database writeDb = Database.Create("pw", tfKey.Path);
+        writeDb.Metadata!.Name = "AsyncKeyFile";
+        await writeDb.SaveAsAsync(tfDb.Path, ct);
 
-            using Database readDb = await Database.OpenAsync(dbPath, "pw", keyPath, ct);
-            readDb.Metadata!.Name.ShouldBe("AsyncKeyFile");
-        }
-        finally
-        {
-            File.Delete(keyPath);
-            File.Delete(dbPath);
-        }
+        using Database readDb = await Database.OpenAsync(tfDb.Path, "pw", tfKey.Path, ct);
+        readDb.Metadata!.Name.ShouldBe("AsyncKeyFile");
     }
 
     [Fact]
     public async Task OpenAsync_Wrong_Password_Throws()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database writeDb = Database.Create("correct");
-            await writeDb.SaveAsAsync(path, ct);
+        using var dbf = new DatabaseWithFile("correct");
+        await dbf.SaveAsync(ct);
 
-            await Should.ThrowAsync<Exception>(Database.OpenAsync(path, "wrong", ct: ct));
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        await Should.ThrowAsync<Exception>(Database.OpenAsync(dbf.Path, "wrong", ct: ct));
     }
 
     [Fact]
@@ -689,41 +576,25 @@ public class DatabaseTests
     public async Task OpenAsync_Resets_HasChanges()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database writeDb = Database.Create("pw");
-            writeDb.RootGroup!.AddEntry(new Entry { Title = "E" });
-            writeDb.HasChanges.ShouldBeTrue();
-            await writeDb.SaveAsAsync(path, ct);
-            writeDb.HasChanges.ShouldBeFalse();
+        using var dbf = new DatabaseWithFile();
+        dbf.Database.RootGroup!.AddEntry(new Entry { Title = "E" });
+        dbf.Database.HasChanges.ShouldBeTrue();
+        await dbf.SaveAsync(ct);
+        dbf.Database.HasChanges.ShouldBeFalse();
 
-            using Database readDb = await Database.OpenAsync(path, "pw", ct: ct);
-            readDb.HasChanges.ShouldBeFalse();
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        using Database readDb = await dbf.OpenAsync(ct: ct);
+        readDb.HasChanges.ShouldBeFalse();
     }
 
     [Fact]
     public async Task SaveAsync_Resets_HasChanges()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
-        string path = Path.GetTempFileName();
-        try
-        {
-            using Database db = Database.Create("pw");
-            db.RootGroup!.AddEntry(new Entry { Title = "E" });
-            db.HasChanges.ShouldBeTrue();
+        using var dbf = new DatabaseWithFile();
+        dbf.Database.RootGroup!.AddEntry(new Entry { Title = "E" });
+        dbf.Database.HasChanges.ShouldBeTrue();
 
-            await db.SaveAsAsync(path, ct);
-            db.HasChanges.ShouldBeFalse();
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        await dbf.SaveAsync(ct);
+        dbf.Database.HasChanges.ShouldBeFalse();
     }
 }
