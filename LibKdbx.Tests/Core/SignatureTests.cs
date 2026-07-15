@@ -49,6 +49,22 @@ public class SignatureTests
     }
 
     [Fact]
+    public void GetHashCode_SameValues_SameHash()
+    {
+        var a = new Signature(1, 2);
+        var b = new Signature(1, 2);
+        a.GetHashCode().ShouldBe(b.GetHashCode());
+    }
+
+    [Fact]
+    public void Operator_Equals_Null()
+    {
+        Signature? nil = null;
+        (nil == new Signature(1, 2)).ShouldBeFalse();
+        (nil == null).ShouldBeTrue();
+    }
+
+    [Fact]
     public void ReadWrite_Stream_Overload()
     {
         var original = new Signature(0xAAAAAAAA, 0xBBBBBBBB);

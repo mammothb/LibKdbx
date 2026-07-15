@@ -76,4 +76,13 @@ public class ProtectedStreamTests
 
         stream1.Process(plaintext).ShouldNotBe(stream2.Process(plaintext));
     }
+
+    [Fact]
+    public void Constructor_UnknownAlgorithm_Throws()
+    {
+        byte[] key = new byte[32];
+        // Cast an invalid integer to the enum to hit the default throw
+        ProtectedStreamAlgorithm bad = (ProtectedStreamAlgorithm)99;
+        Should.Throw<NotSupportedException>(() => new ProtectedStream(bad, key));
+    }
 }
