@@ -271,24 +271,16 @@ public class GroupTests
 
     // ── MoveTo ───────────────────────────────────────────────────────────
 
-    [Fact]
-    public void MoveTo_Self_Throws()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void MoveTo_InvalidTarget_Throws(bool self)
     {
         Group root = new();
         Group child = new();
         root.AddGroup(child);
 
-        Should.Throw<InvalidOperationException>(() => child.MoveTo(child));
-    }
-
-    [Fact]
-    public void MoveTo_Ancestor_Throws()
-    {
-        Group root = new();
-        Group child = new();
-        root.AddGroup(child);
-
-        Should.Throw<InvalidOperationException>(() => root.MoveTo(child));
+        Should.Throw<InvalidOperationException>(() => (self ? child : root).MoveTo(child));
     }
 
     [Fact]
