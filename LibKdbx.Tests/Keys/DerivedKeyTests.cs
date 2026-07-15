@@ -7,8 +7,7 @@ public class DerivedKeyTests
     [Fact]
     public void Derive_Produces_32ByteKey()
     {
-        byte[] seed = new byte[16];
-        RandomNumberGenerator.Fill(seed);
+        byte[] seed = CryptoHelpers.GetRandomBytes(16);
         AesKdf kdf = new(seed, 1000);
 
         using var ck = new CompositeKey("test");
@@ -20,8 +19,7 @@ public class DerivedKeyTests
     [Fact]
     public void Derive_SameInputs_Produces_SameOutput()
     {
-        byte[] seed = new byte[16];
-        RandomNumberGenerator.Fill(seed);
+        byte[] seed = CryptoHelpers.GetRandomBytes(16);
         AesKdf kdf = new(seed, 1000);
 
         using var ck1 = new CompositeKey("test");
@@ -36,8 +34,7 @@ public class DerivedKeyTests
     [Fact]
     public void Derive_DifferentPasswords_Produces_DifferentOutput()
     {
-        byte[] seed = new byte[16];
-        RandomNumberGenerator.Fill(seed);
+        byte[] seed = CryptoHelpers.GetRandomBytes(16);
         AesKdf kdf = new(seed, 1000);
 
         using var ck1 = new CompositeKey("password1");

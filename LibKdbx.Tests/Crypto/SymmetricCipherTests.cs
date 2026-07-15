@@ -124,10 +124,8 @@ public class SymmetricCipherTests
     [Fact]
     public void CipherStream_Properties_Throw_Or_Return_Correctly()
     {
-        byte[] key = new byte[32];
-        byte[] iv = new byte[12];
-        RandomNumberGenerator.Fill(key);
-        RandomNumberGenerator.Fill(iv);
+        byte[] key = CryptoHelpers.GetRandomBytes(32);
+        byte[] iv = CryptoHelpers.GetRandomBytes(12);
 
         SymmetricCipher cipher = new(CipherAlgorithm.ChaCha20, key, iv);
         using var inner = new MemoryStream();
@@ -149,10 +147,8 @@ public class SymmetricCipherTests
     [Fact]
     public void Twofish_Stream_Write_Then_Dispose_Flushes()
     {
-        byte[] key = new byte[32];
-        byte[] iv = new byte[16];
-        RandomNumberGenerator.Fill(key);
-        RandomNumberGenerator.Fill(iv);
+        byte[] key = CryptoHelpers.GetRandomBytes(32);
+        byte[] iv = CryptoHelpers.GetRandomBytes(16);
 
         SymmetricCipher cipher = new(CipherAlgorithm.Twofish256Cbc, key, iv);
         var inner = new MemoryStream();

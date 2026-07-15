@@ -11,8 +11,7 @@ public class CompositeKeyTests
     [Fact]
     public void KeyFile_XmlV1_Produces_Expected_32Bytes()
     {
-        byte[] expectedKey = new byte[32];
-        RandomNumberGenerator.Fill(expectedKey);
+        byte[] expectedKey = CryptoHelpers.GetRandomBytes(32);
 
         using var tf = WriteTempXmlKeyFile(expectedKey);
         using var key = new CompositeKey();
@@ -27,8 +26,7 @@ public class CompositeKeyTests
     [Fact]
     public void KeyFile_Hex64Chars_Produces_Expected_32Bytes()
     {
-        byte[] expectedKey = new byte[32];
-        RandomNumberGenerator.Fill(expectedKey);
+        byte[] expectedKey = CryptoHelpers.GetRandomBytes(32);
         string hex = Convert.ToHexString(expectedKey); // 64 hex chars
 
         using var tf = new TempFile();
@@ -44,8 +42,7 @@ public class CompositeKeyTests
     [Fact]
     public void KeyFile_Raw32Bytes_Produces_Expected_32Bytes()
     {
-        byte[] expectedKey = new byte[32];
-        RandomNumberGenerator.Fill(expectedKey);
+        byte[] expectedKey = CryptoHelpers.GetRandomBytes(32);
 
         using var tf = new TempFile();
         tf.WriteAllBytes(expectedKey);
@@ -159,8 +156,7 @@ public class CompositeKeyTests
     [Fact]
     public void Password_And_KeyFile_Produces_32ByteKey()
     {
-        byte[] keyBytes = new byte[32];
-        RandomNumberGenerator.Fill(keyBytes);
+        byte[] keyBytes = CryptoHelpers.GetRandomBytes(32);
         using var tf = WriteTempHexKeyFile(keyBytes);
         using var key = new CompositeKey("hunter2", tf.Path);
         byte[] raw = key.GetRawKey();
@@ -170,10 +166,8 @@ public class CompositeKeyTests
     [Fact]
     public void KeyFile_Changes_Result()
     {
-        byte[] key1 = new byte[32];
-        byte[] key2 = new byte[32];
-        RandomNumberGenerator.Fill(key1);
-        RandomNumberGenerator.Fill(key2);
+        byte[] key1 = CryptoHelpers.GetRandomBytes(32);
+        byte[] key2 = CryptoHelpers.GetRandomBytes(32);
         key2.ShouldNotBe(key1); // vanishingly unlikely to collide
 
         using var tf1 = WriteTempHexKeyFile(key1);

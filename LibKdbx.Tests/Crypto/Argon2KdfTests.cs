@@ -7,8 +7,7 @@ public class Argon2KdfTests
     [Fact]
     public void Parameter_RoundTrip_Argon2id()
     {
-        byte[] salt = new byte[32];
-        RandomNumberGenerator.Fill(salt);
+        byte[] salt = CryptoHelpers.GetRandomBytes(32);
 
         Argon2Kdf kdf = new(salt, parallelism: 4, memoryKib: 65536, iterations: 3, Argon2Type.Id);
         VariantMap map = kdf.Parameters();
@@ -25,8 +24,7 @@ public class Argon2KdfTests
     [Fact]
     public void Parameter_RoundTrip_Argon2d()
     {
-        byte[] salt = new byte[32];
-        RandomNumberGenerator.Fill(salt);
+        byte[] salt = CryptoHelpers.GetRandomBytes(32);
 
         Argon2Kdf kdf = new(salt, parallelism: 2, memoryKib: 32768, iterations: 2, Argon2Type.D);
         VariantMap map = kdf.Parameters();
@@ -42,10 +40,8 @@ public class Argon2KdfTests
     [Fact]
     public void Produces_32_Byte_Key()
     {
-        byte[] salt = new byte[32];
-        RandomNumberGenerator.Fill(salt);
-        byte[] input = new byte[32];
-        RandomNumberGenerator.Fill(input);
+        byte[] salt = CryptoHelpers.GetRandomBytes(32);
+        byte[] input = CryptoHelpers.GetRandomBytes(32);
 
         Argon2Kdf kdf = new(salt, parallelism: 2, memoryKib: 16384, iterations: 2);
 
@@ -56,10 +52,8 @@ public class Argon2KdfTests
     [Fact]
     public void Deterministic_Output()
     {
-        byte[] salt = new byte[32];
-        RandomNumberGenerator.Fill(salt);
-        byte[] input = new byte[32];
-        RandomNumberGenerator.Fill(input);
+        byte[] salt = CryptoHelpers.GetRandomBytes(32);
+        byte[] input = CryptoHelpers.GetRandomBytes(32);
 
         Argon2Kdf kdf1 = new(salt, 2, 16384, 2);
         Argon2Kdf kdf2 = new(salt, 2, 16384, 2);

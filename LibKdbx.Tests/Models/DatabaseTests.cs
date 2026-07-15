@@ -210,8 +210,7 @@ public class DatabaseTests
     [Fact]
     public void Ctor_Path_Password_And_KeyFile_Sets_Both()
     {
-        byte[] keyBytes = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(keyBytes);
+        byte[] keyBytes = CryptoHelpers.GetRandomBytes(32);
         using var tfKey = new TempFile();
         tfKey.WriteAllText(Convert.ToHexString(keyBytes));
         using Database db = new("/tmp/test.kdbx", "hunter2", tfKey.Path);
@@ -223,8 +222,7 @@ public class DatabaseTests
     [Fact]
     public void Create_With_KeyFile_Sets_RootGroup()
     {
-        byte[] keyBytes = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(keyBytes);
+        byte[] keyBytes = CryptoHelpers.GetRandomBytes(32);
         using var tfKey = new TempFile();
         tfKey.WriteAllText(Convert.ToHexString(keyBytes));
         using Database db = Database.Create("pw", tfKey.Path);
@@ -261,8 +259,7 @@ public class DatabaseTests
     [Fact]
     public void Open_With_KeyFile()
     {
-        byte[] keyBytes = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(keyBytes);
+        byte[] keyBytes = CryptoHelpers.GetRandomBytes(32);
         using var tfKey = new TempFile();
         tfKey.WriteAllText(Convert.ToHexString(keyBytes));
         using var tfDb = new TempFile();
@@ -530,8 +527,7 @@ public class DatabaseTests
     public async Task OpenAsync_With_KeyFile()
     {
         CancellationToken ct = TestContext.Current.CancellationToken;
-        byte[] keyBytes = new byte[32];
-        System.Security.Cryptography.RandomNumberGenerator.Fill(keyBytes);
+        byte[] keyBytes = CryptoHelpers.GetRandomBytes(32);
         using var tfKey = new TempFile();
         tfKey.WriteAllText(Convert.ToHexString(keyBytes));
         using var tfDb = new TempFile();
