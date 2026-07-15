@@ -604,6 +604,94 @@ public class PlaceholderResolverTests
     }
 
     [Fact]
+    public void Reference_DepthExhausted_ReturnsToken()
+    {
+        using Database db = Database.Create("pw");
+        Entry target = new() { Title = "Target", UserName = "bob" };
+        db.RootGroup!.AddEntry(target);
+
+        Entry source = new() { Title = "Source" };
+        db.RootGroup.AddEntry(source);
+
+        // Resolve REF directly with maxDepth=1: depth exhausted inside ResolveReferenceToken
+        string resolved = PlaceholderResolver.Resolve(source, "{REF:N@T:Target}", maxDepth: 1);
+        resolved.ShouldBe("{REF:N@T:Target}");
+    }
+
+    [Fact]
+    public void Reference_InvalidSyntax_ReturnsToken()
+    {
+        using Database db = Database.Create("pw");
+        Entry source = new() { Title = "Source" };
+        db.RootGroup!.AddEntry(source);
+
+        // Missing field code and separator — TryParse fails
+        string resolved = Resolve(source, "{REF:INVALID}");
+        resolved.ShouldBe("{REF:INVALID}");
+    }
+
+    [Fact]
+    public void Reference_TargetNotFound_ReturnsToken()
+    {
+        using Database db = Database.Create("pw");
+        Entry source = new() { Title = "Source" };
+        db.RootGroup!.AddEntry(source);
+
+        // Non-existent UUID — FindReferencedEntry returns null
+        string resolved = Resolve(source, "{REF:N@I:deadbeefdeadbeefdeadbeefdeadbeef}");
+        resolved.ShouldBe("{REF:N@I:deadbeefdeadbeefdeadbeefdeadbeef}");
+    }
+
+    [Fact]
+    public void Reference_UnsupportedFieldCode_ReturnsToken()
+    {
+        using Database db = Database.Create("pw");
+        Entry target = new() { Title = "Target", UserName = "bob" };
+        db.RootGroup!.AddEntry(target);
+
+        Entry source = new() { Title = "Source" };
+        db.RootGroup.AddEntry(source);
+
+        // WantedField 'X' is not a valid field code → FieldCodeToKey returns null
+        string resolved = Resolve(source, "{REF:X@T:Target}");
+        resolved.ShouldBe("{REF:X@T:Target}");
+    }
+
+    [Fact]
+    public void Reference_SearchInByUuid_ResolvesField()
+    {
+        using Database db = Database.Create("pw");
+        Guid targetUuid = Guid.NewGuid();
+        Entry target = new()
+        {
+            Uuid = targetUuid,
+            Title = "Target",
+            UserName = "bob",
+        };
+        db.RootGroup!.AddEntry(target);
+
+        Entry source = new() { Title = "Source" };
+        db.RootGroup.AddEntry(source);
+
+        // SearchIn='I' with a valid UUID hex → find by UUID
+        string hex = targetUuid.ToString("N");
+        string resolved = Resolve(source, $"{{REF:T@I:{hex}}}");
+        resolved.ShouldBe("Target");
+    }
+
+    [Fact]
+    public void Reference_UnsupportedSearchIn_ReturnsToken()
+    {
+        using Database db = Database.Create("pw");
+        Entry source = new() { Title = "Source" };
+        db.RootGroup!.AddEntry(source);
+
+        // SearchIn 'X' is not a valid field code → FindReferencedEntry returns null
+        string resolved = Resolve(source, "{REF:N@X:value}");
+        resolved.ShouldBe("{REF:N@X:value}");
+    }
+
+    [Fact]
     public void UrlPassword_No_Colon_Returns_Empty()
     {
         Entry entry = CreateEntry();
