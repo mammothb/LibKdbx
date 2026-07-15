@@ -123,6 +123,15 @@ public class EntryAttributesTests
         attrs.Get("A").ShouldBe("1");
     }
 
+    [Fact]
+    public void Rename_NonExisting_OldKey_ReturnsFalse()
+    {
+        EntryAttributes attrs = new();
+        attrs.Rename("DoesNotExist", "NewKey").ShouldBeFalse();
+        attrs.Contains("DoesNotExist").ShouldBeFalse();
+        attrs.Contains("NewKey").ShouldBeFalse();
+    }
+
     [Theory]
     [InlineData("hello", true)]
     [InlineData("nope", false)]
@@ -359,6 +368,28 @@ public class EntryAttributesTests
         a.Set("X", "1");
         EntryAttributes b = new();
         b.Set("Y", "1");
+
+        a.AreCustomKeysDifferent(b).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void AreCustomKeysDifferent_DifferentValues_ReturnsTrue()
+    {
+        EntryAttributes a = new();
+        a.Set("X", "val-a");
+        EntryAttributes b = new();
+        b.Set("X", "val-b");
+
+        a.AreCustomKeysDifferent(b).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void AreCustomKeysDifferent_SameValuesDifferentProtection_ReturnsTrue()
+    {
+        EntryAttributes a = new();
+        a.Set("X", "val", protect: true);
+        EntryAttributes b = new();
+        b.Set("X", "val", protect: false);
 
         a.AreCustomKeysDifferent(b).ShouldBeTrue();
     }
