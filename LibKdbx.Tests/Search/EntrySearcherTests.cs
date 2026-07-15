@@ -69,16 +69,18 @@ public class EntrySearcherTests
 
     // ── Title search ─────────────────────────────────────────────────────────
 
-    [Fact]
-    public void Title_Exact_Match()
+    [Theory]
+    [InlineData("title:GitHub", "GitLab", "GitHub")]
+    [InlineData("+title:GitHub", "GitHub Enterprise", "GitHub")]
+    public void Title_Exact_Match(string query, string extraTitle, string matchedTitle)
     {
         (Group root, _) = CreateDbWithEntry("GitHub");
-        Entry e2 = new() { Title = "GitLab" };
+        Entry e2 = new() { Title = extraTitle };
         root.AddEntry(e2);
 
-        List<Entry> results = CreateSearcher().Search("title:GitHub", root);
+        List<Entry> results = CreateSearcher().Search(query, root);
         results.Count.ShouldBe(1);
-        results[0].Title.ShouldBe("GitHub");
+        results[0].Title.ShouldBe(matchedTitle);
     }
 
     [Fact]
@@ -100,38 +102,22 @@ public class EntrySearcherTests
         results2.Count.ShouldBe(0);
     }
 
-    [Fact]
-    public void Title_Wildcard_Star()
+    [Theory]
+    [InlineData("GitHub", "GitLab", "title:Git*", 2)]
+    [InlineData("user1", "user2", "title:user?", 2)]
+    public void Title_Wildcard_Multiple_Matches(
+        string title1,
+        string title2,
+        string query,
+        int expectedCount
+    )
     {
-        (Group root, _) = CreateDbWithEntry("GitHub");
-        Entry e2 = new() { Title = "GitLab" };
+        (Group root, _) = CreateDbWithEntry(title1);
+        Entry e2 = new() { Title = title2 };
         root.AddEntry(e2);
 
-        List<Entry> results = CreateSearcher().Search("title:Git*", root);
-        results.Count.ShouldBe(2);
-    }
-
-    [Fact]
-    public void Title_Wildcard_Question()
-    {
-        (Group root, _) = CreateDbWithEntry("user1");
-        Entry e2 = new() { Title = "user2" };
-        root.AddEntry(e2);
-
-        List<Entry> results = CreateSearcher().Search("title:user?", root);
-        results.Count.ShouldBe(2);
-    }
-
-    [Fact]
-    public void Title_Exact_Modifier()
-    {
-        (Group root, _) = CreateDbWithEntry("GitHub");
-        Entry e2 = new() { Title = "GitHub Enterprise" };
-        root.AddEntry(e2);
-
-        List<Entry> results = CreateSearcher().Search("+title:GitHub", root);
-        results.Count.ShouldBe(1);
-        results[0].Title.ShouldBe("GitHub");
+        List<Entry> results = CreateSearcher().Search(query, root);
+        results.Count.ShouldBe(expectedCount);
     }
 
     // ── Broad search (Undefined field) ───────────────────────────────────────
@@ -170,25 +156,17 @@ public class EntrySearcherTests
         results.Count.ShouldBe(1);
     }
 
-    [Fact]
-    public void Password_Skipped_When_Protected()
+    [Theory]
+    [InlineData(true, 0)]
+    [InlineData(false, 1)]
+    public void Password_Protected_SkipBehavior(bool skipProtected, int expectedCount)
     {
         (Group root, Entry entry) = CreateDbWithEntry(password: "mysecret");
         entry.Attributes.Set("Password", "mysecret", protect: true);
 
-        EntrySearcher searcher = CreateSearcher(skipProtected: true);
+        EntrySearcher searcher = CreateSearcher(skipProtected: skipProtected);
         List<Entry> results = searcher.Search("password:mysecret", root);
-        results.Count.ShouldBe(0);
-    }
-
-    [Fact]
-    public void Password_Not_Skipped_Without_Flag()
-    {
-        (Group root, Entry entry) = CreateDbWithEntry(password: "mysecret");
-        entry.Attributes.Set("Password", "mysecret", protect: true);
-
-        List<Entry> results = CreateSearcher().Search("password:mysecret", root);
-        results.Count.ShouldBe(1);
+        results.Count.ShouldBe(expectedCount);
     }
 
     // ── Exclude ──────────────────────────────────────────────────────────────
@@ -247,26 +225,16 @@ public class EntrySearcherTests
 
     // ── Quoted strings ───────────────────────────────────────────────────────
 
-    [Fact]
-    public void Quoted_String_With_Spaces()
+    [Theory]
+    [InlineData("My Special Entry", "title:\"My Special Entry\"")]
+    [InlineData("He said \"hello\"", "title:\"He said \\\"hello\\\"\"")]
+    public void Quoted_String_Matches(string title, string query)
     {
-        Entry e = new() { Title = "My Special Entry", UserName = "bob" };
+        Entry e = new() { Title = title, UserName = "bob" };
         Group root = new();
         root.AddEntry(e);
 
-        List<Entry> results = CreateSearcher().Search("title:\"My Special Entry\"", root);
-        results.Count.ShouldBe(1);
-    }
-
-    [Fact]
-    public void Quoted_String_With_Escaped_Quote()
-    {
-        Entry e = new() { Title = "He said \"hello\"", UserName = "bob" };
-        Group root = new();
-        root.AddEntry(e);
-
-        // Search for literal quote
-        List<Entry> results = CreateSearcher().Search("title:\"He said \\\"hello\\\"\"", root);
+        List<Entry> results = CreateSearcher().Search(query, root);
         results.Count.ShouldBe(1);
     }
 
@@ -367,23 +335,15 @@ public class EntrySearcherTests
 
     // ── Custom attributes ────────────────────────────────────────────────────
 
-    [Fact]
-    public void AttributeKV_Search_Key()
+    [Theory]
+    [InlineData("prod-01", "attribute:server")]
+    [InlineData("prod-db-01", "attribute:prod")]
+    public void AttributeKV_Search(string value, string query)
     {
         (Group root, Entry entry) = CreateDbWithEntry();
-        entry.Attributes.Set("Server", "prod-01");
+        entry.Attributes.Set("Server", value);
 
-        List<Entry> results = CreateSearcher().Search("attribute:server", root);
-        results.Count.ShouldBe(1);
-    }
-
-    [Fact]
-    public void AttributeKV_Search_Value()
-    {
-        (Group root, Entry entry) = CreateDbWithEntry();
-        entry.Attributes.Set("Server", "prod-db-01");
-
-        List<Entry> results = CreateSearcher().Search("attribute:prod", root);
+        List<Entry> results = CreateSearcher().Search(query, root);
         results.Count.ShouldBe(1);
     }
 
@@ -451,40 +411,21 @@ public class EntrySearcherTests
 
     // ── is: / has: ───────────────────────────────────────────────────────────
 
-    [Fact]
-    public void Is_Expired_Already_Expired()
+    [Theory]
+    [InlineData(-5, "is:expired", 1)]
+    [InlineData(30, "is:expired", 0)]
+    [InlineData(3, "is:expired-10", 1)]
+    public void Is_Expired(int offsetDays, string query, int expectedCount)
     {
-        Group root = new();
-        Entry e = new()
+        (Group root, Entry entry) = CreateDbWithEntry();
+        entry.Times = new Times
         {
-            Title = "Old",
-            UserName = "bob",
-            Times = new Times { Expires = true, ExpiryTime = DateTime.UtcNow.AddDays(-5) },
+            Expires = true,
+            ExpiryTime = DateTime.UtcNow.AddDays(offsetDays),
         };
-        root.AddEntry(e);
 
-        List<Entry> results = CreateSearcher().Search("is:expired", root);
-        results.Count.ShouldBe(1);
-    }
-
-    [Fact]
-    public void Is_Expired_Not_Expired()
-    {
-        (Group root, Entry entry) = CreateDbWithEntry();
-        entry.Times = new Times { Expires = true, ExpiryTime = DateTime.UtcNow.AddDays(30) };
-
-        List<Entry> results = CreateSearcher().Search("is:expired", root);
-        results.Count.ShouldBe(0);
-    }
-
-    [Fact]
-    public void Is_Expired_N_Days()
-    {
-        (Group root, Entry entry) = CreateDbWithEntry();
-        entry.Times = new Times { Expires = true, ExpiryTime = DateTime.UtcNow.AddDays(3) };
-
-        List<Entry> results = CreateSearcher().Search("is:expired-10", root);
-        results.Count.ShouldBe(1);
+        List<Entry> results = CreateSearcher().Search(query, root);
+        results.Count.ShouldBe(expectedCount);
     }
 
     [Fact]
@@ -506,23 +447,17 @@ public class EntrySearcherTests
         results.Count.ShouldBe(0);
     }
 
-    [Fact]
-    public void Has_Totp()
+    [Theory]
+    [InlineData(true, 1)]
+    [InlineData(false, 0)]
+    public void Has_Totp(bool hasSeed, int expectedCount)
     {
         (Group root, Entry entry) = CreateDbWithEntry();
-        entry.Attributes.Set("TOTP Seed", "JBSWY3DPEHPK3PXP");
+        if (hasSeed)
+            entry.Attributes.Set("TOTP Seed", "JBSWY3DPEHPK3PXP");
 
         List<Entry> results = CreateSearcher().Search("has:totp", root);
-        results.Count.ShouldBe(1);
-    }
-
-    [Fact]
-    public void Has_Totp_Not_Configured()
-    {
-        (Group root, _) = CreateDbWithEntry();
-
-        List<Entry> results = CreateSearcher().Search("has:totp", root);
-        results.Count.ShouldBe(0);
+        results.Count.ShouldBe(expectedCount);
     }
 
     // ── EnableSearching ──────────────────────────────────────────────────────
@@ -608,17 +543,12 @@ public class EntrySearcherTests
 
     // ── Edge cases ───────────────────────────────────────────────────────────
 
-    [Fact]
-    public void ParseSearchTerms_Whitespace_Only()
+    [Theory]
+    [InlineData("   ")]
+    [InlineData("title:")]
+    public void ParseSearchTerms_Empty_Result(string input)
     {
-        List<SearchTerm> terms = CreateSearcher().ParseSearchTerms("   ");
-        terms.Count.ShouldBe(0);
-    }
-
-    [Fact]
-    public void ParseSearchTerms_Colon_No_Word()
-    {
-        List<SearchTerm> terms = CreateSearcher().ParseSearchTerms("title:");
+        List<SearchTerm> terms = CreateSearcher().ParseSearchTerms(input);
         terms.Count.ShouldBe(0);
     }
 
