@@ -54,6 +54,34 @@ public class VariantMapTests
         ((long)deserialized["BigValue"]).ShouldBe(1234567890123L);
     }
 
+    // ── Unsupported type ──────────────────────────────────────────────
+
+    [Fact]
+    public void Read_UnknownTypeCode_Throws()
+    {
+        // Craft a binary map with version 0x0100, a key-value using unknown type 0xFF
+        using var ms = new MemoryStream();
+        using var writer = new BinaryWriter(ms, System.Text.Encoding.UTF8, leaveOpen: true);
+        writer.Write((ushort)0x0100); // version
+        writer.Write((byte)0xFF); // unknown type code
+        byte[] keyBytes = "test"u8.ToArray();
+        writer.Write((uint)keyBytes.Length);
+        writer.Write(keyBytes);
+        writer.Write((uint)4); // value length
+        writer.Write(new byte[] { 1, 2, 3, 4 }); // value
+        writer.Write((byte)0x00); // terminator
+        ms.Position = 0;
+        Should.Throw<NotSupportedException>(() => VariantMap.Read(ms.ToArray()));
+    }
+
+    [Fact]
+    public void Serialize_UnsupportedType_Throws()
+    {
+        // float is not a supported VariantMap value type
+        var map = new VariantMap(new Dictionary<string, object> { ["bad"] = 3.14f });
+        Should.Throw<NotSupportedException>(() => map.Serialize());
+    }
+
     // ── Unsupported version ────────────────────────────────────────────
 
     [Fact]
