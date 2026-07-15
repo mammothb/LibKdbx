@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <!-- NuGet metadata -->
     <PackageId>LibKdbx</PackageId>
-    <Version>0.3.0</Version>
     <Authors>mammothb</Authors>
     <Description>C# library for KeePass (.kdbx) databases</Description>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
@@ -16,6 +15,10 @@
 
   <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GitVersion.MsBuild" Version="6.8.2" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
