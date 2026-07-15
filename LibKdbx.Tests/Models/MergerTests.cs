@@ -65,12 +65,20 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "SourceTitle", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 1, 10);
+        Entry sourceEntry = new()
+        {
+            Title = "SourceTitle",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 10) },
+        };
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "TargetTitle", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        Entry targetEntry = new()
+        {
+            Title = "TargetTitle",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
+        };
         target.RootGroup!.AddEntry(targetEntry);
 
         new Merger().Merge(source, target);
@@ -84,12 +92,20 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "SourceTitle", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        Entry sourceEntry = new()
+        {
+            Title = "SourceTitle",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
+        };
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "TargetTitle", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 10);
+        Entry targetEntry = new()
+        {
+            Title = "TargetTitle",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 10) },
+        };
         target.RootGroup!.AddEntry(targetEntry);
 
         new Merger().Merge(source, target);
@@ -103,12 +119,20 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "SourceOld", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2024, 1, 1);
+        Entry sourceEntry = new()
+        {
+            Title = "SourceOld",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2024, 1, 1) },
+        };
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "TargetNew", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 6, 1);
+        Entry targetEntry = new()
+        {
+            Title = "TargetNew",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 6, 1) },
+        };
         target.RootGroup!.AddEntry(targetEntry);
 
         new Merger { DefaultMode = MergeMode.Synchronize }.Merge(source, target);
@@ -137,8 +161,8 @@ public class MergerTests
             OverrideUrl = "S_Override",
             Tags = "S_Tags",
             Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
         };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
         sourceEntry.Attributes.Set("CustomKey", "CustomVal");
         source.RootGroup!.AddEntry(sourceEntry);
 
@@ -150,8 +174,8 @@ public class MergerTests
             Url = "T_Url",
             Notes = "T_Notes",
             Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
         };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
         target.RootGroup!.AddEntry(targetEntry);
 
         new Merger().Merge(source, target);
@@ -176,14 +200,22 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "S", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
+        Entry sourceEntry = new()
+        {
+            Title = "S",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
+        };
         sourceEntry.Attributes.Set("A", "1");
         sourceEntry.Attributes.Set("B", "2");
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "T", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        Entry targetEntry = new()
+        {
+            Title = "T",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
+        };
         targetEntry.Attributes.Set("B", "old");
         targetEntry.Attributes.Set("C", "3");
         target.RootGroup!.AddEntry(targetEntry);
@@ -202,13 +234,21 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "S", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
+        Entry sourceEntry = new()
+        {
+            Title = "S",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
+        };
         sourceEntry.Attributes.Set("Keep", "yes");
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "T", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        Entry targetEntry = new()
+        {
+            Title = "T",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
+        };
         targetEntry.Attributes.Set("Keep", "old");
         targetEntry.Attributes.Set("Drop", "gone");
         target.RootGroup!.AddEntry(targetEntry);
@@ -226,13 +266,21 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "S", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
+        Entry sourceEntry = new()
+        {
+            Title = "S",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
+        };
         sourceEntry.Attachments.Set("keep.txt", "keep-data"u8.ToArray());
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "T", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        Entry targetEntry = new()
+        {
+            Title = "T",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
+        };
         targetEntry.Attachments.Set("keep.txt", "old-data"u8.ToArray());
         targetEntry.Attachments.Set("drop.txt", "bye"u8.ToArray());
         target.RootGroup!.AddEntry(targetEntry);
@@ -250,8 +298,12 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "S", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
+        Entry sourceEntry = new()
+        {
+            Title = "S",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
+        };
         sourceEntry.AutoType.Enabled = false;
         sourceEntry.AutoType.DefaultSequence = "{USERNAME}{TAB}{PASSWORD}{ENTER}";
         sourceEntry.AutoType.Associations.Add(
@@ -259,8 +311,12 @@ public class MergerTests
         );
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "T", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        Entry targetEntry = new()
+        {
+            Title = "T",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
+        };
         target.RootGroup!.AddEntry(targetEntry);
 
         new Merger().Merge(source, target);
@@ -285,8 +341,8 @@ public class MergerTests
             Name = "SourceName",
             Notes = "SN",
             Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
         };
-        sourceGroup.Times.LastModificationTime = new DateTime(2025, 2, 1);
         source.RootGroup!.AddGroup(sourceGroup);
 
         Group targetGroup = new()
@@ -294,8 +350,8 @@ public class MergerTests
             Name = "TargetName",
             Notes = "TN",
             Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
         };
-        targetGroup.Times.LastModificationTime = new DateTime(2025, 1, 1);
         target.RootGroup!.AddGroup(targetGroup);
 
         new Merger().Merge(source, target);
@@ -311,12 +367,20 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Group sourceGroup = new() { Name = "SourceName", Uuid = uuid };
-        sourceGroup.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        Group sourceGroup = new()
+        {
+            Name = "SourceName",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
+        };
         source.RootGroup!.AddGroup(sourceGroup);
 
-        Group targetGroup = new() { Name = "TargetName", Uuid = uuid };
-        targetGroup.Times.LastModificationTime = new DateTime(2025, 2, 1);
+        Group targetGroup = new()
+        {
+            Name = "TargetName",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
+        };
         target.RootGroup!.AddGroup(targetGroup);
 
         new Merger().Merge(source, target);
@@ -397,13 +461,21 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "S_v2", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 3, 1);
+        Entry sourceEntry = new()
+        {
+            Title = "S_v2",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 3, 1) },
+        };
         sourceEntry._history.Add(new Entry { Title = "S_v1" });
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "T_v1", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
+        Entry targetEntry = new()
+        {
+            Title = "T_v1",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
+        };
         target.RootGroup!.AddEntry(targetEntry);
 
         new Merger().Merge(source, target);
@@ -422,13 +494,21 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "S_v1", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
+        Entry sourceEntry = new()
+        {
+            Title = "S_v1",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
+        };
         sourceEntry._history.Add(new Entry { Title = "S_v0" });
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "T_v2", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 3, 1);
+        Entry targetEntry = new()
+        {
+            Title = "T_v2",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 3, 1) },
+        };
         targetEntry._history.Add(new Entry { Title = "T_v1" });
         target.RootGroup!.AddEntry(targetEntry);
 
@@ -451,14 +531,22 @@ public class MergerTests
 
         target.Metadata!.HistoryMaxItems = 2;
 
-        Entry sourceEntry = new() { Title = "S", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 4, 1);
+        Entry sourceEntry = new()
+        {
+            Title = "S",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 4, 1) },
+        };
         sourceEntry._history.Add(new Entry { Title = "H3" });
         sourceEntry._history.Add(new Entry { Title = "H4" });
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "T", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 3, 1);
+        Entry targetEntry = new()
+        {
+            Title = "T",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 3, 1) },
+        };
         targetEntry._history.Add(new Entry { Title = "H1" });
         targetEntry._history.Add(new Entry { Title = "H2" });
         target.RootGroup!.AddEntry(targetEntry);
@@ -491,12 +579,20 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "NewTitle", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
+        Entry sourceEntry = new()
+        {
+            Title = "NewTitle",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
+        };
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "OldTitle", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        Entry targetEntry = new()
+        {
+            Title = "OldTitle",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
+        };
         target.RootGroup!.AddEntry(targetEntry);
 
         new Merger { DryRun = true }.Merge(source, target);
@@ -565,14 +661,22 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid uuid = Guid.NewGuid();
 
-        Entry sourceEntry = new() { Title = "S", Uuid = uuid };
-        sourceEntry.Times.LastModificationTime = new DateTime(2025, 2, 1);
-        sourceEntry.CustomData = new CustomData();
+        Entry sourceEntry = new()
+        {
+            Title = "S",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
+            CustomData = new CustomData(),
+        };
         sourceEntry.CustomData.Set("Plugin", "enabled");
         source.RootGroup!.AddEntry(sourceEntry);
 
-        Entry targetEntry = new() { Title = "T", Uuid = uuid };
-        targetEntry.Times.LastModificationTime = new DateTime(2025, 1, 1);
+        Entry targetEntry = new()
+        {
+            Title = "T",
+            Uuid = uuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
+        };
         target.RootGroup!.AddEntry(targetEntry);
 
         new Merger().Merge(source, target);
@@ -588,14 +692,22 @@ public class MergerTests
         (Database source, Database target) = CreatePair();
         Guid groupUuid = Guid.NewGuid();
 
-        Group sourceGroup = new() { Name = "SourceG", Uuid = groupUuid };
-        sourceGroup.Times.LastModificationTime = new DateTime(2025, 2, 1);
-        sourceGroup.Notes = "FromSource";
+        Group sourceGroup = new()
+        {
+            Name = "SourceG",
+            Uuid = groupUuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 2, 1) },
+            Notes = "FromSource",
+        };
         source.RootGroup!.AddGroup(sourceGroup);
 
-        Group targetGroup = new() { Name = "TargetG", Uuid = groupUuid };
-        targetGroup.Times.LastModificationTime = new DateTime(2025, 1, 1);
-        targetGroup.Notes = "FromTarget";
+        Group targetGroup = new()
+        {
+            Name = "TargetG",
+            Uuid = groupUuid,
+            Times = new Times { LastModificationTime = new DateTime(2025, 1, 1) },
+            Notes = "FromTarget",
+        };
         target.RootGroup!.AddGroup(targetGroup);
 
         new Merger { DefaultMode = MergeMode.Synchronize }.Merge(source, target);
