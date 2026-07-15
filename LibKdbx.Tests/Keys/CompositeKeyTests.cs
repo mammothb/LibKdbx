@@ -14,21 +14,14 @@ public class CompositeKeyTests
         byte[] expectedKey = new byte[32];
         RandomNumberGenerator.Fill(expectedKey);
 
-        string path = WriteTempXmlKeyFile(expectedKey);
-        try
-        {
-            using var key = new CompositeKey();
-            key.AddKeyFile(path);
-            byte[] raw = key.GetRawKey();
+        using var tf = WriteTempXmlKeyFile(expectedKey);
+        using var key = new CompositeKey();
+        key.AddKeyFile(tf.Path);
+        byte[] raw = key.GetRawKey();
 
-            // GetRawKey = SHA256(component), component = the 32-byte key from file
-            byte[] expected = SHA256.HashData(expectedKey);
-            raw.ShouldBe(expected);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        // GetRawKey = SHA256(component), component = the 32-byte key from file
+        byte[] expected = SHA256.HashData(expectedKey);
+        raw.ShouldBe(expected);
     }
 
     [Fact]
@@ -38,21 +31,14 @@ public class CompositeKeyTests
         RandomNumberGenerator.Fill(expectedKey);
         string hex = Convert.ToHexString(expectedKey); // 64 hex chars
 
-        string path = Path.GetTempFileName();
-        File.WriteAllText(path, hex, Encoding.ASCII);
-        try
-        {
-            using var key = new CompositeKey();
-            key.AddKeyFile(path);
-            byte[] raw = key.GetRawKey();
+        using var tf = new TempFile();
+        tf.WriteAllText(hex);
+        using var key = new CompositeKey();
+        key.AddKeyFile(tf.Path);
+        byte[] raw = key.GetRawKey();
 
-            byte[] expected = SHA256.HashData(expectedKey);
-            raw.ShouldBe(expected);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        byte[] expected = SHA256.HashData(expectedKey);
+        raw.ShouldBe(expected);
     }
 
     [Fact]
@@ -61,21 +47,14 @@ public class CompositeKeyTests
         byte[] expectedKey = new byte[32];
         RandomNumberGenerator.Fill(expectedKey);
 
-        string path = Path.GetTempFileName();
-        File.WriteAllBytes(path, expectedKey);
-        try
-        {
-            using var key = new CompositeKey();
-            key.AddKeyFile(path);
-            byte[] raw = key.GetRawKey();
+        using var tf = new TempFile();
+        tf.WriteAllBytes(expectedKey);
+        using var key = new CompositeKey();
+        key.AddKeyFile(tf.Path);
+        byte[] raw = key.GetRawKey();
 
-            byte[] expected = SHA256.HashData(expectedKey);
-            raw.ShouldBe(expected);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        byte[] expected = SHA256.HashData(expectedKey);
+        raw.ShouldBe(expected);
     }
 
     [Fact]
@@ -83,25 +62,18 @@ public class CompositeKeyTests
     {
         byte[] fileContent = "arbitrary file content\n"u8.ToArray();
 
-        string path = Path.GetTempFileName();
-        File.WriteAllBytes(path, fileContent);
-        try
-        {
-            using var key = new CompositeKey();
-            key.AddKeyFile(path);
-            byte[] raw = key.GetRawKey();
+        using var tf = new TempFile();
+        tf.WriteAllBytes(fileContent);
+        using var key = new CompositeKey();
+        key.AddKeyFile(tf.Path);
+        byte[] raw = key.GetRawKey();
 
-            // Any other file → SHA-256 of content as the 32-byte component,
-            // then GetRawKey hashes again with SHA-256.
-            // So raw = SHA256(SHA256(fileContent))
-            byte[] firstHash = SHA256.HashData(fileContent);
-            byte[] expected = SHA256.HashData(firstHash);
-            raw.ShouldBe(expected);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        // Any other file → SHA-256 of content as the 32-byte component,
+        // then GetRawKey hashes again with SHA-256.
+        // So raw = SHA256(SHA256(fileContent))
+        byte[] firstHash = SHA256.HashData(fileContent);
+        byte[] expected = SHA256.HashData(firstHash);
+        raw.ShouldBe(expected);
     }
 
     [Fact]
@@ -109,25 +81,18 @@ public class CompositeKeyTests
     {
         byte[] garbage = "<not><valid>xml"u8.ToArray();
 
-        string path = Path.GetTempFileName();
-        File.WriteAllBytes(path, garbage);
-        try
-        {
-            using var key = new CompositeKey();
-            key.AddKeyFile(path);
-            byte[] raw = key.GetRawKey();
+        using var tf = new TempFile();
+        tf.WriteAllBytes(garbage);
+        using var key = new CompositeKey();
+        key.AddKeyFile(tf.Path);
+        byte[] raw = key.GetRawKey();
 
-            // TryParseXmlKeyFile catches exception → false
-            // Not 64 bytes → not hex check
-            // Not 32 bytes → not raw check
-            // Falls through to SHA-256 fallback
-            byte[] expected = SHA256.HashData(SHA256.HashData(garbage));
-            raw.ShouldBe(expected);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        // TryParseXmlKeyFile catches exception → false
+        // Not 64 bytes → not hex check
+        // Not 32 bytes → not raw check
+        // Falls through to SHA-256 fallback
+        byte[] expected = SHA256.HashData(SHA256.HashData(garbage));
+        raw.ShouldBe(expected);
     }
 
     [Fact]
@@ -139,25 +104,18 @@ public class CompositeKeyTests
                 + "<KeyFile><Meta><Version>1.0</Version></Meta></KeyFile>"
         );
 
-        string path = Path.GetTempFileName();
-        File.WriteAllBytes(path, xml);
-        try
-        {
-            using var key = new CompositeKey();
-            key.AddKeyFile(path);
-            byte[] raw = key.GetRawKey();
+        using var tf = new TempFile();
+        tf.WriteAllBytes(xml);
+        using var key = new CompositeKey();
+        key.AddKeyFile(tf.Path);
+        byte[] raw = key.GetRawKey();
 
-            // TryParseXmlKeyFile: XDocument.Parse succeeds but dataElement is null → false
-            // Not 64 bytes → not hex check
-            // Not 32 bytes → not raw check
-            // Falls through to SHA-256
-            byte[] expected = SHA256.HashData(SHA256.HashData(xml));
-            raw.ShouldBe(expected);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        // TryParseXmlKeyFile: XDocument.Parse succeeds but dataElement is null → false
+        // Not 64 bytes → not hex check
+        // Not 32 bytes → not raw check
+        // Falls through to SHA-256
+        byte[] expected = SHA256.HashData(SHA256.HashData(xml));
+        raw.ShouldBe(expected);
     }
 
     [Fact]
@@ -166,40 +124,26 @@ public class CompositeKeyTests
         // 64 chars but not valid hex — TryParseHex catches, falls through
         byte[] data = Encoding.ASCII.GetBytes(new string('Z', 64));
 
-        string path = Path.GetTempFileName();
-        File.WriteAllBytes(path, data);
-        try
-        {
-            using var key = new CompositeKey();
-            key.AddKeyFile(path);
-            byte[] raw = key.GetRawKey();
+        using var tf = new TempFile();
+        tf.WriteAllBytes(data);
+        using var key = new CompositeKey();
+        key.AddKeyFile(tf.Path);
+        byte[] raw = key.GetRawKey();
 
-            // TryParseXmlKeyFile fails first (not XML)
-            // data.Length == 64 → tries TryParseHex → catches → false
-            // data.Length != 32 → falls through to SHA-256
-            byte[] expected = SHA256.HashData(SHA256.HashData(data));
-            raw.ShouldBe(expected);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        // TryParseXmlKeyFile fails first (not XML)
+        // data.Length == 64 → tries TryParseHex → catches → false
+        // data.Length != 32 → falls through to SHA-256
+        byte[] expected = SHA256.HashData(SHA256.HashData(data));
+        raw.ShouldBe(expected);
     }
 
     [Fact]
     public void KeyFile_EmptyFile_Throws()
     {
-        string path = Path.GetTempFileName();
+        using var tf = new TempFile();
         // File exists but is empty (0 bytes)
-        try
-        {
-            using var key = new CompositeKey();
-            Should.Throw<FormatException>(() => key.AddKeyFile(path));
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        using var key = new CompositeKey();
+        Should.Throw<FormatException>(() => key.AddKeyFile(tf.Path));
     }
 
     // ── Composite key derivation ────────────────────────────────────────────
@@ -217,17 +161,10 @@ public class CompositeKeyTests
     {
         byte[] keyBytes = new byte[32];
         RandomNumberGenerator.Fill(keyBytes);
-        string path = WriteTempHexKeyFile(keyBytes);
-        try
-        {
-            using var key = new CompositeKey("hunter2", path);
-            byte[] raw = key.GetRawKey();
-            raw.Length.ShouldBe(32);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
+        using var tf = WriteTempHexKeyFile(keyBytes);
+        using var key = new CompositeKey("hunter2", tf.Path);
+        byte[] raw = key.GetRawKey();
+        raw.Length.ShouldBe(32);
     }
 
     [Fact]
@@ -239,20 +176,12 @@ public class CompositeKeyTests
         RandomNumberGenerator.Fill(key2);
         key2.ShouldNotBe(key1); // vanishingly unlikely to collide
 
-        string path1 = WriteTempHexKeyFile(key1);
-        string path2 = WriteTempHexKeyFile(key2);
-        try
-        {
-            using var ck1 = new CompositeKey("pass", path1);
-            using var ck2 = new CompositeKey("pass", path2);
+        using var tf1 = WriteTempHexKeyFile(key1);
+        using var tf2 = WriteTempHexKeyFile(key2);
+        using var ck1 = new CompositeKey("pass", tf1.Path);
+        using var ck2 = new CompositeKey("pass", tf2.Path);
 
-            ck1.GetRawKey().ShouldNotBe(ck2.GetRawKey());
-        }
-        finally
-        {
-            File.Delete(path1);
-            File.Delete(path2);
-        }
+        ck1.GetRawKey().ShouldNotBe(ck2.GetRawKey());
     }
 
     [Fact]
@@ -288,7 +217,7 @@ public class CompositeKeyTests
 
     // ── Helpers ─────────────────────────────────────────────────────────────
 
-    private static string WriteTempXmlKeyFile(byte[] key32)
+    private static TempFile WriteTempXmlKeyFile(byte[] key32)
     {
         var doc = new XDocument(
             new XDeclaration("1.0", "utf-8", null),
@@ -299,7 +228,7 @@ public class CompositeKeyTests
             )
         );
 
-        string path = Path.GetTempFileName();
+        var tf = new TempFile();
         using var ms = new MemoryStream();
         var settings = new System.Xml.XmlWriterSettings
         {
@@ -310,14 +239,14 @@ public class CompositeKeyTests
         {
             doc.Save(writer);
         }
-        File.WriteAllBytes(path, ms.ToArray());
-        return path;
+        File.WriteAllBytes(tf.Path, ms.ToArray());
+        return tf;
     }
 
-    private static string WriteTempHexKeyFile(byte[] key32)
+    private static TempFile WriteTempHexKeyFile(byte[] key32)
     {
-        string path = Path.GetTempFileName();
-        File.WriteAllText(path, Convert.ToHexString(key32), Encoding.ASCII);
-        return path;
+        var tf = new TempFile();
+        File.WriteAllText(tf.Path, Convert.ToHexString(key32), Encoding.ASCII);
+        return tf;
     }
 }

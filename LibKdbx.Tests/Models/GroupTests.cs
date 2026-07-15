@@ -152,19 +152,13 @@ public class GroupTests
         using Database db = Database.Create("pw");
         Entry entry = new();
         db.RootGroup!.AddEntry(entry);
-        db.SaveAs(Path.GetTempFileName()); // reset HasChanges
-        try
-        {
-            db.RootGroup.RemoveEntry(entry);
+        using var tf = new TempFile();
+        db.SaveAs(tf.Path); // reset HasChanges
+        db.RootGroup.RemoveEntry(entry);
 
-            db.HasChanges.ShouldBeTrue();
-            entry.Database.ShouldBeNull();
-            db.FindEntryByUuid(entry.Uuid).ShouldBeNull();
-        }
-        finally
-        {
-            File.Delete(db.DatabaseFile!.FullName);
-        }
+        db.HasChanges.ShouldBeTrue();
+        entry.Database.ShouldBeNull();
+        db.FindEntryByUuid(entry.Uuid).ShouldBeNull();
     }
 
     // ── CRUD: AddGroup ──────────────────────────────────────────────────
@@ -216,20 +210,14 @@ public class GroupTests
         Entry entry = new();
         child.AddEntry(entry);
         db.RootGroup!.AddGroup(child);
-        db.SaveAs(Path.GetTempFileName()); // reset HasChanges
-        try
-        {
-            db.RootGroup.RemoveGroup(child);
+        using var tf = new TempFile();
+        db.SaveAs(tf.Path); // reset HasChanges
+        db.RootGroup.RemoveGroup(child);
 
-            db.HasChanges.ShouldBeTrue();
-            child.Database.ShouldBeNull();
-            entry.Database.ShouldBeNull();
-            child.ParentGroup.ShouldBeNull();
-        }
-        finally
-        {
-            File.Delete(db.DatabaseFile!.FullName);
-        }
+        db.HasChanges.ShouldBeTrue();
+        child.Database.ShouldBeNull();
+        entry.Database.ShouldBeNull();
+        child.ParentGroup.ShouldBeNull();
     }
 
     // ── Delete ───────────────────────────────────────────────────────────

@@ -72,16 +72,9 @@ public class PlaceholderResolverTests
         using Database db = Database.Create("pw");
         Entry entry = new() { Title = "E", UserName = "u" };
         db.RootGroup!.AddEntry(entry);
-        string tempPath = Path.GetTempFileName();
-        try
-        {
-            db.SaveAs(tempPath);
-            Resolve(entry, "{DB_DIR}").ShouldBe(Path.GetDirectoryName(tempPath));
-        }
-        finally
-        {
-            File.Delete(tempPath);
-        }
+        using var tf = new TempFile();
+        db.SaveAs(tf.Path);
+        Resolve(entry, "{DB_DIR}").ShouldBe(Path.GetDirectoryName(tf.Path));
     }
 
     [Fact]

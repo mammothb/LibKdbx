@@ -46,23 +46,16 @@ public class KeePassInteropTests
         {
             return;
         }
-        string outPath = Path.GetTempFileName();
-        try
-        {
-            using Database db = Database.Open(path, "test");
-            int entryCount = db.RootGroup!.FindAllEntries(_ => true).Count();
-            int deletedCount = db.DeletedObjects.Count;
+        using var outFile = new TempFile();
+        using Database db = Database.Open(path, "test");
+        int entryCount = db.RootGroup!.FindAllEntries(_ => true).Count();
+        int deletedCount = db.DeletedObjects.Count;
 
-            db.SaveAs(outPath);
+        db.SaveAs(outFile.Path);
 
-            using Database reopened = Database.Open(outPath, "test");
-            reopened.RootGroup!.FindAllEntries(_ => true).Count().ShouldBe(entryCount);
-            reopened.DeletedObjects.Count.ShouldBe(deletedCount);
-        }
-        finally
-        {
-            File.Delete(outPath);
-        }
+        using Database reopened = Database.Open(outFile.Path, "test");
+        reopened.RootGroup!.FindAllEntries(_ => true).Count().ShouldBe(entryCount);
+        reopened.DeletedObjects.Count.ShouldBe(deletedCount);
     }
 
     [Fact]
