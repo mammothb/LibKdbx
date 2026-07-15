@@ -105,6 +105,88 @@ public class CompositeKeyTests
     }
 
     [Fact]
+    public void KeyFile_InvalidXml_FallsThroughToSha256()
+    {
+        byte[] garbage = "<not><valid>xml"u8.ToArray();
+
+        string path = Path.GetTempFileName();
+        File.WriteAllBytes(path, garbage);
+        try
+        {
+            using var key = new CompositeKey();
+            key.AddKeyFile(path);
+            byte[] raw = key.GetRawKey();
+
+            // TryParseXmlKeyFile catches exception → false
+            // Not 64 bytes → not hex check
+            // Not 32 bytes → not raw check
+            // Falls through to SHA-256 fallback
+            byte[] expected = SHA256.HashData(SHA256.HashData(garbage));
+            raw.ShouldBe(expected);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void KeyFile_ValidXmlMissingDataElement_FallsThroughToSha256()
+    {
+        // Well-formed XML with <KeyFile> root but no <Key><Data> sub-element
+        byte[] xml = Encoding.UTF8.GetBytes(
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+                + "<KeyFile><Meta><Version>1.0</Version></Meta></KeyFile>"
+        );
+
+        string path = Path.GetTempFileName();
+        File.WriteAllBytes(path, xml);
+        try
+        {
+            using var key = new CompositeKey();
+            key.AddKeyFile(path);
+            byte[] raw = key.GetRawKey();
+
+            // TryParseXmlKeyFile: XDocument.Parse succeeds but dataElement is null → false
+            // Not 64 bytes → not hex check
+            // Not 32 bytes → not raw check
+            // Falls through to SHA-256
+            byte[] expected = SHA256.HashData(SHA256.HashData(xml));
+            raw.ShouldBe(expected);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void KeyFile_InvalidHex64_FallsThroughToSha256()
+    {
+        // 64 chars but not valid hex — TryParseHex catches, falls through
+        byte[] data = Encoding.ASCII.GetBytes(new string('Z', 64));
+
+        string path = Path.GetTempFileName();
+        File.WriteAllBytes(path, data);
+        try
+        {
+            using var key = new CompositeKey();
+            key.AddKeyFile(path);
+            byte[] raw = key.GetRawKey();
+
+            // TryParseXmlKeyFile fails first (not XML)
+            // data.Length == 64 → tries TryParseHex → catches → false
+            // data.Length != 32 → falls through to SHA-256
+            byte[] expected = SHA256.HashData(SHA256.HashData(data));
+            raw.ShouldBe(expected);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void KeyFile_EmptyFile_Throws()
     {
         string path = Path.GetTempFileName();
